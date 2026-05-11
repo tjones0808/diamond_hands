@@ -1,0 +1,1086 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #020403;
+  color: #d1fae5;
+  --panel: rgba(3, 10, 8, 0.86);
+  --panel-strong: rgba(2, 6, 5, 0.95);
+  --line: rgba(52, 211, 153, 0.25);
+  --green: #34d399;
+  --cyan: #38bdf8;
+  --amber: #facc15;
+  --red: #fb7185;
+  --muted: #7dd3c7;
+  --text: #eafff4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #020403;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.game-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 48px clamp(150px, 22vh, 220px) minmax(0, 1fr);
+  gap: 10px;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(52, 211, 153, 0.18), transparent 26%),
+    radial-gradient(circle at 82% 8%, rgba(56, 189, 248, 0.14), transparent 24%),
+    linear-gradient(135deg, #020403 0%, #04110d 43%, #07080a 100%);
+}
+
+.game-shell::before,
+.game-shell::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.game-shell::before {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(52, 211, 153, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(180deg, black, transparent 78%);
+}
+
+.game-shell::after {
+  opacity: 0.24;
+  background: repeating-linear-gradient(180deg, transparent 0 3px, rgba(255, 255, 255, 0.04) 4px);
+}
+
+.game-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.market-tape {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(52, 211, 153, 0.36);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(1, 22, 12, 0.98), rgba(3, 18, 22, 0.94)),
+    var(--panel-strong);
+  box-shadow: 0 0 28px rgba(52, 211, 153, 0.13), inset 0 0 24px rgba(56, 189, 248, 0.08);
+}
+
+.tape-brand,
+.tape-clock {
+  display: grid;
+  gap: 2px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.tape-brand {
+  border-right: 1px solid rgba(52, 211, 153, 0.24);
+}
+
+.tape-clock {
+  border-left: 1px solid rgba(56, 189, 248, 0.24);
+  text-align: right;
+}
+
+.tape-brand span,
+.tape-clock span,
+.hud span,
+.terminal-header p,
+.section-heading span,
+.ticker em,
+.event-card span,
+.upgrade-card p,
+.career-card p,
+.trade-ticket p,
+.signal-card p,
+.signal-card > span,
+.weekly-goals .section-heading span,
+.day-card span {
+  color: #8abeb5;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tape-brand strong,
+.tape-clock strong {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.tape-stream {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.tape-quote {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 7px;
+  min-width: max-content;
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(2, 6, 5, 0.62);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.tape-quote strong {
+  color: var(--cyan);
+}
+
+.tape-quote span {
+  color: #dbfff0;
+}
+
+.command-deck,
+.terminal-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.command-deck {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.36fr) minmax(0, 0.64fr);
+  gap: 10px;
+}
+
+.room-panel,
+.terminal-panel,
+.status-deck {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: inset 0 0 36px rgba(52, 211, 153, 0.07), 0 0 30px rgba(0, 0, 0, 0.35);
+}
+
+.room-panel {
+  position: relative;
+}
+
+.status-deck {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.room-panel::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.1), transparent 16%, rgba(52, 211, 153, 0.08));
+  content: "";
+  mix-blend-mode: screen;
+}
+
+.room-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #020403;
+}
+
+.room-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.terminal-panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding: 10px;
+}
+
+.hud,
+.day-track,
+.watchlist,
+.trade-grid,
+.terminal {
+  display: grid;
+  gap: 8px;
+}
+
+.hud {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.hud div,
+.day-card,
+.signal-card,
+.trade-ticket,
+.weekly-goals,
+.positions,
+.log,
+.ticker,
+.event-card,
+.upgrade-card,
+.career-card,
+.terminal-header {
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(7, 20, 16, 0.92), rgba(2, 7, 6, 0.86)),
+    rgba(2, 6, 5, 0.75);
+  box-shadow: inset 0 0 18px rgba(52, 211, 153, 0.04);
+}
+
+.hud div {
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.hud strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-strip {
+  display: grid;
+  grid-template-columns: minmax(112px, 142px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+}
+
+.week-strip .section-heading {
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0;
+}
+
+.week-strip .section-heading span {
+  font-size: 10px;
+}
+
+.section-heading,
+.terminal-header,
+.signal-card,
+.upgrade-card,
+.career-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section-heading {
+  margin-bottom: 8px;
+}
+
+.section-heading h2,
+.terminal-header h1,
+.signal-card h2,
+.trade-ticket h2,
+.weekly-goals h2,
+.positions h2,
+.log h2,
+.upgrade-card h2,
+.career-card h2 {
+  margin: 0;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.day-track {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.day-card {
+  min-height: 0;
+  padding: 7px 10px;
+}
+
+.day-card strong {
+  display: block;
+  color: #eafff4;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.day-card.active,
+.ticker.selected {
+  border-color: rgba(52, 211, 153, 0.85);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.14), inset 0 0 0 1px rgba(52, 211, 153, 0.34);
+}
+
+.terminal {
+  grid-template-columns: minmax(360px, 1.05fr) minmax(620px, 1.55fr) minmax(260px, 0.6fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.market-column,
+.controls-column,
+.terminal > .positions {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.market-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.controls-column {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.controls-column.has-event {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+.terminal-header {
+  min-height: 60px;
+  padding: 10px 12px;
+}
+
+.terminal-header h1 {
+  color: var(--green);
+  font-size: 18px;
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.32);
+}
+
+.terminal-header p {
+  margin: 4px 0 0;
+  text-transform: none;
+}
+
+.terminal-header button,
+.summary-panel button,
+.upgrade-card button,
+.trade-grid button {
+  min-height: 38px;
+  cursor: pointer;
+  color: #02110b;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.terminal-header button {
+  min-width: 132px;
+  border: 1px solid rgba(56, 189, 248, 0.56);
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.2);
+}
+
+.terminal-header button:hover,
+.summary-panel button:hover,
+.upgrade-card button:hover,
+.trade-grid button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.watchlist {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ticker {
+  display: grid;
+  grid-template-columns: minmax(38px, 0.65fr) minmax(44px, 0.55fr) minmax(58px, 0.9fr);
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 4px 7px;
+  color: var(--text);
+  text-align: left;
+}
+
+.ticker-symbol {
+  overflow: hidden;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticker strong {
+  color: #eafff4;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ticker em {
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.gain {
+  color: var(--green) !important;
+}
+
+.loss {
+  color: var(--red) !important;
+}
+
+.career-card,
+.signal-card,
+.trade-ticket,
+.weekly-goals,
+.upgrade-card,
+.event-card,
+.positions,
+.log {
+  padding: 10px 12px;
+}
+
+.progress-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.career-card {
+  display: grid;
+  grid-template-columns: minmax(108px, 0.68fr) minmax(0, 1fr);
+}
+
+.upgrade-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+}
+
+.career-card,
+.upgrade-card,
+.weekly-goals,
+.trade-ticket {
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+}
+
+.positions,
+.log {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.positions {
+  grid-area: auto;
+}
+
+.log {
+  display: grid;
+  grid-area: auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100px;
+}
+
+.log-lines {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.gate-grid {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gate-grid span {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #b7d8d0;
+  padding: 7px 9px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.gate-grid .met {
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.signal-card {
+  grid-area: auto;
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+.stock-detail-panel {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.92fr) minmax(260px, 1fr) minmax(118px, 0.38fr);
+  gap: 10px;
+  align-items: stretch;
+  min-height: 86px;
+}
+
+.stock-detail-panel .section-heading {
+  margin-bottom: 4px;
+}
+
+.stock-detail-panel .section-heading span {
+  align-self: center;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--cyan);
+}
+
+.stock-intel-copy {
+  min-width: 0;
+}
+
+.stock-intel-copy strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intel-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.intel-metrics span,
+.ticket-metrics span,
+.goal-row {
+  border: 1px solid rgba(52, 211, 153, 0.14);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.intel-metrics span {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px;
+}
+
+.intel-metrics small,
+.goal-row small {
+  overflow: hidden;
+  color: #8abeb5;
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intel-metrics b {
+  overflow: hidden;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intel-spark {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 3px;
+  min-width: 0;
+}
+
+.intel-spark svg {
+  width: 100%;
+  height: 42px;
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 5px;
+  background: rgba(2, 6, 5, 0.52);
+}
+
+.intel-spark polyline {
+  fill: none;
+  stroke: var(--green);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.42));
+}
+
+.intel-spark em {
+  overflow: hidden;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.signal-card p,
+.trade-ticket p,
+.career-card p,
+.upgrade-card p {
+  margin: 5px 0 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.signal-card > span {
+  align-self: flex-start;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--cyan);
+}
+
+.event-card {
+  grid-area: auto;
+  min-height: 58px;
+  border-color: rgba(250, 204, 21, 0.42);
+  background:
+    linear-gradient(90deg, rgba(74, 45, 2, 0.52), rgba(7, 20, 16, 0.86)),
+    rgba(2, 6, 5, 0.8);
+}
+
+.event-card strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--amber);
+  font-family: Consolas, "Liberation Mono", monospace;
+}
+
+.trade-ticket {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 6px;
+  border-color: rgba(52, 211, 153, 0.28);
+  padding: 8px 10px;
+}
+
+.ticket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ticket-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.ticket-inputs label {
+  display: grid;
+  gap: 3px;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.ticket-inputs input {
+  width: 60px;
+  height: 26px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  padding: 3px 6px;
+}
+
+.ticket-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ticket-metrics span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  padding: 5px 7px;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.ticket-metrics b {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.trade-grid {
+  grid-area: auto;
+  grid-template-columns: repeat(5, minmax(70px, 1fr));
+  align-content: stretch;
+}
+
+.trade-ticket .trade-grid {
+  gap: 7px;
+}
+
+.trade-grid button,
+.upgrade-card button,
+.summary-panel button {
+  border-radius: 6px;
+  padding: 8px 7px;
+  line-height: 1.15;
+}
+
+.trade-ticket .trade-grid button {
+  min-height: 34px;
+  padding: 6px 7px;
+}
+
+.trade-grid button:nth-child(1),
+.trade-grid button:nth-child(3) {
+  border: 1px solid rgba(52, 211, 153, 0.5);
+  background: linear-gradient(180deg, #55f2a4, #22c55e);
+}
+
+.trade-grid button:nth-child(2),
+.trade-grid button:nth-child(5) {
+  border: 1px solid rgba(251, 113, 133, 0.52);
+  background: linear-gradient(180deg, #fb7185, #f43f5e);
+  color: #220006;
+}
+
+.trade-grid button:nth-child(4) {
+  border: 1px solid rgba(56, 189, 248, 0.52);
+  background: linear-gradient(180deg, #67e8f9, #38bdf8);
+  color: #011019;
+}
+
+.upgrade-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.upgrade-card button,
+.summary-panel button {
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  background: linear-gradient(180deg, #fde68a, #facc15);
+}
+
+.upgrade-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
+}
+
+.weekly-goals {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+.weekly-goals .section-heading {
+  margin-bottom: 6px;
+}
+
+.goal-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.goal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  min-width: 0;
+  padding: 6px 7px;
+}
+
+.goal-row strong,
+.goal-row span {
+  overflow: hidden;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-row.complete {
+  border-color: rgba(52, 211, 153, 0.48);
+  background: rgba(20, 83, 45, 0.34);
+}
+
+.goal-meter {
+  grid-column: 1 / -1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.goal-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+}
+
+.positions p,
+.log p {
+  margin: 6px 0 0;
+  color: #c6f6e3;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.log p {
+  overflow: hidden;
+  margin: 4px 0 0;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 5, 0.82);
+}
+
+.summary-panel {
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid rgba(251, 113, 133, 0.55);
+  border-radius: 8px;
+  background: #050807;
+  box-shadow: 0 0 44px rgba(251, 113, 133, 0.16);
+  padding: 24px;
+}
+
+.summary-panel h2 {
+  margin-top: 0;
+  color: var(--red);
+  font-family: Consolas, "Liberation Mono", monospace;
+}
+
+@media (max-width: 1280px) {
+  .tape-brand strong,
+  .tape-clock strong,
+  .tape-quote {
+    font-size: 11px;
+  }
+
+  .hud {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .terminal {
+    align-content: start;
+    grid-template-columns: minmax(300px, 0.86fr) minmax(0, 1.14fr);
+    overflow: auto;
+    scrollbar-color: rgba(52, 211, 153, 0.55) rgba(2, 6, 5, 0.8);
+    scrollbar-width: thin;
+  }
+
+  .terminal .controls-column {
+    min-height: max-content;
+    overflow: visible;
+  }
+
+  .terminal > .positions {
+    grid-column: 1 / -1;
+    min-height: 180px;
+  }
+
+  .positions,
+  .log {
+    overflow: auto;
+  }
+}
+
+@media (max-width: 880px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+  }
+
+  .game-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .command-deck {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(240px, 38vh) auto;
+    overflow: visible;
+  }
+
+  .status-deck {
+    overflow: visible;
+  }
+
+  .market-tape {
+    grid-template-columns: 1fr;
+    padding: 8px 0;
+  }
+
+  .tape-brand,
+  .tape-clock {
+    border: 0;
+    text-align: left;
+  }
+
+  .tape-stream {
+    padding: 0 10px;
+    overflow-x: auto;
+  }
+
+  .terminal-panel,
+  .terminal {
+    overflow: visible;
+  }
+
+  .week-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .terminal {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-column {
+    grid-template-columns: 1fr;
+  }
+
+  .hud,
+  .day-track,
+  .watchlist,
+  .trade-grid,
+  .ticket-metrics,
+  .intel-metrics,
+  .section-heading,
+  .terminal-header,
+  .signal-card,
+  .stock-detail-panel,
+  .ticket-header,
+  .upgrade-card,
+  .career-card,
+  .weekly-goals {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading,
+  .terminal-header,
+  .signal-card,
+  .stock-detail-panel,
+  .ticket-header,
+  .upgrade-card,
+  .career-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .gate-grid,
+  .upgrade-actions {
+    min-width: 0;
+  }
+
+  .upgrade-actions {
+    grid-template-columns: 1fr;
+  }
+}
