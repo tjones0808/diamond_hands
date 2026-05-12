@@ -93,7 +93,7 @@ button:focus-visible {
 .market-tape {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   min-width: 0;
@@ -104,6 +104,24 @@ button:focus-visible {
     linear-gradient(90deg, rgba(1, 22, 12, 0.98), rgba(3, 18, 22, 0.94)),
     var(--panel-strong);
   box-shadow: 0 0 28px rgba(52, 211, 153, 0.13), inset 0 0 24px rgba(56, 189, 248, 0.08);
+}
+
+.tape-mute {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  border-radius: 6px;
+  background: rgba(2, 6, 5, 0.62);
+  color: var(--text);
+  font-size: 16px;
+}
+
+.tape-mute:hover {
+  border-color: var(--cyan);
 }
 
 .tape-brand,
@@ -234,6 +252,234 @@ button:focus-visible {
   min-height: 0;
   overflow: hidden;
   background: #020403;
+}
+
+.journal-toggle {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 6px;
+  background: rgba(2, 6, 5, 0.78);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.15);
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+}
+
+.journal-toggle:hover {
+  border-color: var(--cyan);
+  filter: brightness(1.08);
+}
+
+.journal-backdrop {
+  position: fixed;
+  z-index: 12;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 5, 0.84);
+  backdrop-filter: blur(2px);
+}
+
+.journal-panel {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(7, 20, 16, 0.97), rgba(2, 7, 6, 0.97));
+  box-shadow: 0 0 48px rgba(56, 189, 248, 0.18);
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.journal-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 12px;
+}
+
+.journal-panel header span {
+  display: block;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.journal-panel header h2 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 20px;
+}
+
+.journal-panel header button {
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 6px;
+  background: transparent;
+  color: #b7d8d0;
+  font-size: 14px;
+}
+
+.journal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.journal-stats span {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 8px 10px;
+}
+
+.journal-stats small {
+  color: #8abeb5;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journal-stats b {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.journal-recent h3 {
+  margin: 0 0 8px;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journal-recent ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.journal-recent li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  border-radius: 6px;
+  background: rgba(2, 6, 5, 0.6);
+  padding: 8px 10px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.journal-recent strong {
+  color: var(--cyan);
+}
+
+.journal-recent em {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journal-empty {
+  margin: 0;
+  color: #8abeb5;
+  font-size: 12px;
+}
+
+.trophy-shelf {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(250, 204, 21, 0.32);
+  border-radius: 6px;
+  background: rgba(2, 6, 5, 0.78);
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.12);
+  padding: 7px 9px;
+  pointer-events: auto;
+  font-family: Consolas, "Liberation Mono", monospace;
+  max-width: 170px;
+}
+
+.trophy-shelf header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--amber);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trophy-shelf header small {
+  color: #b7d8d0;
+  font-size: 10px;
+}
+
+.trophy-shelf ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.trophy-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+}
+
+.trophy-item.unlocked {
+  color: #fef3c7;
+}
+
+.trophy-item.locked {
+  color: #475569;
+  opacity: 0.55;
+}
+
+.trophy-icon {
+  text-align: center;
+  font-size: 13px;
+}
+
+.trophy-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .room-canvas canvas {
@@ -419,7 +665,7 @@ button:focus-visible {
 .summary-panel button,
 .upgrade-card button,
 .trade-grid button {
-  min-height: 38px;
+  min-height: 32px;
   cursor: pointer;
   color: #02110b;
   font-family: Consolas, "Liberation Mono", monospace;
@@ -427,6 +673,11 @@ button:focus-visible {
   font-weight: 800;
   text-transform: uppercase;
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.upgrade-card button {
+  min-height: 28px;
+  font-size: 10px;
 }
 
 .terminal-header button {
@@ -585,10 +836,197 @@ button:focus-visible {
 
 .stock-detail-panel {
   display: grid;
-  grid-template-columns: minmax(210px, 0.92fr) minmax(260px, 1fr) minmax(118px, 0.38fr);
-  gap: 10px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 4px;
   align-items: stretch;
-  min-height: 86px;
+  padding: 8px 10px;
+  min-height: 0;
+}
+
+.stock-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stock-detail-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stock-detail-id strong {
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 16px;
+}
+
+.stock-detail-id em {
+  font-style: normal;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.earnings-tag {
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.earnings-tag.active {
+  color: var(--amber);
+  border-color: rgba(250, 204, 21, 0.55);
+  background: rgba(74, 45, 2, 0.42);
+}
+
+.stock-detail-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: Consolas, "Liberation Mono", monospace;
+}
+
+.stock-detail-price b {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.stock-detail-name {
+  display: grid;
+  gap: 2px;
+}
+
+.stock-detail-name strong {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.stock-detail-name p {
+  margin: 0;
+  color: #b7d8d0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.stock-detail-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.18);
+}
+
+.stock-detail-tabs button {
+  cursor: pointer;
+  flex: 1;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 4px;
+}
+
+.stock-detail-tabs button.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+
+.stock-detail-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.candle-chart {
+  width: 100%;
+  height: 62px;
+}
+
+.candle-chart-empty {
+  height: 62px;
+  display: grid;
+  place-items: center;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.chart-pane {
+  display: grid;
+  gap: 2px;
+}
+
+.chart-legend {
+  list-style: none;
+  display: none;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.dot.gain { background: var(--green); }
+.dot.loss { background: var(--red); }
+.dot.muted { background: #475569; }
+
+.fund-pane,
+.tech-pane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 6px;
+}
+
+.intel-stat {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(52, 211, 153, 0.14);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 6px 8px;
+  cursor: help;
+}
+
+.intel-stat small {
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.intel-stat b {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
 }
 
 .stock-detail-panel .section-heading {
@@ -768,6 +1206,60 @@ button:focus-visible {
   padding: 3px 6px;
 }
 
+.ticket-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.ticket-title h2 {
+  margin-right: 4px;
+}
+
+.strategy-inline {
+  height: 26px;
+  border: 1px solid rgba(56, 189, 248, 0.36);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.dte-picker {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dte-option {
+  min-width: 34px;
+  height: 26px;
+  cursor: pointer;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  border-radius: 5px;
+  background: rgba(2, 6, 5, 0.62);
+  color: #b7d8d0;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0 8px;
+}
+
+.dte-option.active {
+  border-color: var(--cyan);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.3), rgba(2, 22, 30, 0.7));
+  color: var(--text);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.32);
+}
+
+.strategy-button {
+  grid-column: span 2;
+}
+
 .ticket-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -928,13 +1420,618 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-.summary-backdrop {
+.summary-backdrop,
+.recap-backdrop {
   position: fixed;
   z-index: 10;
   inset: 0;
   display: grid;
   place-items: center;
   background: rgba(2, 6, 5, 0.82);
+}
+
+.recap-backdrop {
+  background: rgba(2, 6, 5, 0.86);
+  backdrop-filter: blur(2px);
+  z-index: 11;
+}
+
+.recap-panel {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(7, 20, 16, 0.97), rgba(2, 7, 6, 0.97));
+  box-shadow: 0 0 48px rgba(52, 211, 153, 0.22), inset 0 0 32px rgba(56, 189, 248, 0.06);
+  padding: 22px 22px 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.recap-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+  padding-bottom: 12px;
+}
+
+.recap-head > div:first-child span {
+  display: block;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-head h2 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 20px;
+}
+
+.recap-pnl {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  text-align: right;
+  border-left: 1px solid rgba(52, 211, 153, 0.2);
+  padding-left: 14px;
+}
+
+.recap-pnl small {
+  color: #8abeb5;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-pnl strong {
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 22px;
+}
+
+.recap-pnl em {
+  color: #b7d8d0;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.recap-options h3 {
+  margin: 0 0 8px;
+  color: var(--cyan);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-options ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recap-options li {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 6px;
+  background: rgba(2, 6, 5, 0.6);
+  padding: 8px 10px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.recap-opt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.recap-opt-legs {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 0 12px;
+  display: grid;
+  gap: 3px;
+  border-top: 1px dashed rgba(52, 211, 153, 0.12);
+}
+
+.recap-opt-legs li {
+  display: flex;
+  justify-content: space-between;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #b7d8d0;
+  font-size: 11px;
+}
+
+.recap-opt-legs span {
+  font-weight: 700;
+}
+
+.recap-opt-name strong {
+  color: var(--cyan);
+  margin-right: 4px;
+}
+
+.recap-opt-name em {
+  color: #8abeb5;
+  font-style: normal;
+}
+
+.recap-opt-risk {
+  color: #b7d8d0;
+}
+
+.recap-opt-pnl {
+  text-align: right;
+}
+
+.recap-opt-pnl strong {
+  display: block;
+  font-size: 13px;
+}
+
+.recap-options--empty p {
+  margin: 0;
+  color: #b7d8d0;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.recap-event {
+  display: grid;
+  gap: 3px;
+  border-left: 3px solid var(--amber);
+  background: linear-gradient(90deg, rgba(74, 45, 2, 0.42), rgba(2, 6, 5, 0.62));
+  padding: 9px 12px;
+  border-radius: 0 6px 6px 0;
+}
+
+.recap-event small {
+  color: var(--amber);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-event strong {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.recap-event p {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.recap-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.recap-meta span {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 7px 9px;
+}
+
+.recap-meta small {
+  color: #8abeb5;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-meta b {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.boss-banner {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(76, 5, 25, 0.62), rgba(7, 20, 16, 0.86)),
+    rgba(2, 6, 5, 0.85);
+  box-shadow: inset 0 0 18px rgba(248, 113, 113, 0.18), 0 0 28px rgba(248, 113, 113, 0.12);
+  padding: 8px 11px;
+  animation: bossBannerPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes bossBannerPulse {
+  0%, 100% { box-shadow: inset 0 0 18px rgba(248, 113, 113, 0.18), 0 0 22px rgba(248, 113, 113, 0.10); }
+  50% { box-shadow: inset 0 0 22px rgba(248, 113, 113, 0.28), 0 0 32px rgba(248, 113, 113, 0.18); }
+}
+
+.boss-banner header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.boss-banner header span {
+  color: var(--red);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.boss-banner header strong {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+}
+
+.boss-banner p {
+  margin: 0;
+  color: #fecaca;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.boss-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.boss-progress-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.boss-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--amber), var(--red));
+}
+
+.boss-progress b {
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.boss-progress span {
+  color: #b7d8d0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.boss-progress em {
+  color: var(--amber);
+  font-style: normal;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-boss {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(2, 6, 5, 0.6);
+}
+
+.recap-boss--passed {
+  border-color: rgba(110, 231, 183, 0.6);
+  background: linear-gradient(90deg, rgba(2, 24, 18, 0.72), rgba(2, 6, 5, 0.62));
+}
+
+.recap-boss--failed {
+  background: linear-gradient(90deg, rgba(76, 5, 25, 0.6), rgba(2, 6, 5, 0.62));
+}
+
+.recap-boss header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recap-boss header span {
+  color: var(--red);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.recap-boss--passed header span {
+  color: var(--green);
+}
+
+.recap-boss header strong {
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.recap-boss p {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.recap-boss small {
+  color: #fecaca;
+  font-size: 11px;
+}
+
+.recap-promotion {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(250, 204, 21, 0.65);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(74, 45, 2, 0.78), rgba(2, 24, 18, 0.78)),
+    radial-gradient(circle at 80% 20%, rgba(250, 204, 21, 0.22), transparent 55%);
+  box-shadow: 0 0 32px rgba(250, 204, 21, 0.18), inset 0 0 24px rgba(250, 204, 21, 0.1);
+  padding: 14px 16px;
+  animation: recapPromotionPulse 1.8s ease-out;
+}
+
+@keyframes recapPromotionPulse {
+  0% { transform: scale(0.98); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
+  40% { transform: scale(1.01); box-shadow: 0 0 64px rgba(250, 204, 21, 0.4); }
+  100% { transform: scale(1); box-shadow: 0 0 32px rgba(250, 204, 21, 0.18); }
+}
+
+.recap-promotion-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid rgba(250, 204, 21, 0.3);
+  padding-bottom: 8px;
+}
+
+.recap-promotion-banner span {
+  color: var(--amber);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.recap-promotion-banner strong {
+  color: #fef3c7;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-promotion-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fef3c7;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-promotion-track em {
+  font-style: normal;
+  color: #b7d8d0;
+}
+
+.recap-promotion-track em.next {
+  color: var(--amber);
+}
+
+.recap-promotion-track span[aria-hidden="true"] {
+  color: var(--cyan);
+  font-size: 14px;
+}
+
+.recap-promotion-artifact,
+.recap-promotion-perk {
+  display: grid;
+  gap: 2px;
+  border-left: 3px solid var(--amber);
+  background: rgba(2, 6, 5, 0.4);
+  padding: 8px 10px;
+  border-radius: 0 6px 6px 0;
+}
+
+.recap-promotion-artifact small,
+.recap-promotion-perk small {
+  color: var(--amber);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.recap-promotion-artifact b,
+.recap-promotion-perk b {
+  color: #fef3c7;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+
+.recap-promotion-artifact p {
+  margin: 2px 0 0;
+  color: #fef9c3;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.recap-lesson {
+  margin: 0;
+  color: #c6f6e3;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.recap-panel > button {
+  justify-self: stretch;
+  min-height: 42px;
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.2);
+  color: #02110b;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.recap-panel > button:hover {
+  filter: brightness(1.08);
+}
+
+.coachmark-layer {
+  position: fixed;
+  z-index: 12;
+  inset: 0;
+  pointer-events: none;
+}
+
+.coachmark-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 5, 0.62);
+  backdrop-filter: blur(1px);
+}
+
+.coachmark-spotlight {
+  position: absolute;
+  border: 2px solid var(--cyan);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 9999px rgba(2, 6, 5, 0.62),
+    0 0 24px rgba(56, 189, 248, 0.55) inset,
+    0 0 24px rgba(56, 189, 248, 0.55);
+  pointer-events: none;
+  transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease;
+}
+
+.coachmark-tooltip {
+  position: absolute;
+  width: 340px;
+  pointer-events: auto;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(7, 20, 30, 0.98), rgba(2, 7, 12, 0.98));
+  box-shadow: 0 0 36px rgba(56, 189, 248, 0.25);
+  padding: 14px 16px 12px;
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  transition: top 160ms ease, left 160ms ease;
+}
+
+.coachmark-tooltip header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coachmark-tooltip h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.coachmark-tooltip p {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.coachmark-tooltip footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.coachmark-tooltip footer em {
+  color: #8abeb5;
+  font-style: normal;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.coachmark-skip,
+.coachmark-next {
+  cursor: pointer;
+  border-radius: 5px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+}
+
+.coachmark-skip {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  color: #b7d8d0;
+}
+
+.coachmark-skip:hover {
+  border-color: rgba(251, 113, 133, 0.6);
+  color: var(--red);
+}
+
+.coachmark-next {
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #02110b;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+}
+
+.coachmark-next:hover {
+  filter: brightness(1.08);
 }
 
 .summary-panel {

@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { getCareerGate } from '../career/careerEngine';
 import type { GameAction } from '../game/reducer';
 import type { RunState, SaveState, WeekDay } from '../game/types';
 import { getCurrentPrice, getNetWorth } from '../game/selectors';
-import { estimatePremium } from '../trading/options';
 import { StockDetailPanel } from './StockDetailPanel';
 import { TradeTicket } from './TradeTicket';
 import { WeeklyGoals } from './WeeklyGoals';
+import { BossWeekBanner } from './BossWeekBanner';
 
 const dayHelp: Record<WeekDay, string> = {
   MON: 'Read the market and choose a thesis.',
@@ -21,10 +21,6 @@ export function TradingTerminal({ run, save, dispatch }: { run: RunState; save: 
   const currentPrice = getCurrentPrice(run, symbol);
   const ticker = run.tickers.find((item) => item.definition.symbol === symbol);
   const gate = getCareerGate(run.tier);
-  const callStrike = Math.max(1, Math.round(currentPrice * 1.05));
-  const putStrike = Math.max(1, Math.round(currentPrice * 0.95));
-  const callPremium = useMemo(() => estimatePremium(currentPrice, callStrike, ticker?.definition.volatility ?? 0.1, 'CALL'), [currentPrice, callStrike, ticker]);
-  const putPremium = useMemo(() => estimatePremium(currentPrice, putStrike, ticker?.definition.volatility ?? 0.1, 'PUT'), [currentPrice, putStrike, ticker]);
 
   return (
     <section className="terminal" aria-label="Trading terminal">
@@ -54,6 +50,7 @@ export function TradingTerminal({ run, save, dispatch }: { run: RunState; save: 
       </section>
 
       <section className={run.activeEvent ? 'controls-column has-event' : 'controls-column'} aria-label="Trading controls">
+        <BossWeekBanner run={run} />
         <div className="terminal-header">
           <div>
             <h1>Trading Terminal</h1>
@@ -71,15 +68,12 @@ export function TradingTerminal({ run, save, dispatch }: { run: RunState; save: 
           </article>
         ) : null}
 
-        <StockDetailPanel ticker={ticker} currentPrice={currentPrice} />
+        <StockDetailPanel ticker={ticker} currentPrice={currentPrice} currentDay={run.day} />
 
         <TradeTicket
           symbol={symbol}
           currentPrice={currentPrice}
-          callStrike={callStrike}
-          putStrike={putStrike}
-          callPremium={callPremium}
-          putPremium={putPremium}
+          currentDay={run.day}
           volatility={ticker?.definition.volatility ?? 0.1}
           dispatch={dispatch}
         />
@@ -111,7 +105,11 @@ export function TradingTerminal({ run, save, dispatch }: { run: RunState; save: 
         </div>
         {run.sharePositions.length === 0 && run.optionPositions.length === 0 ? <p>No positions yet. The market is waiting.</p> : null}
         {run.sharePositions.map((position) => <p key={position.symbol}>{position.quantity} {position.symbol} shares @ ${position.averagePrice}</p>)}
-        {run.optionPositions.map((option) => <p key={option.id}>{option.quantity} {option.symbol} {option.type} {option.strike}, premium ${option.premium}</p>)}
+        {run.optionPositions.map((option) => (
+          <p key={option.id}>
+            {option.side === 'SHORT' ? '-' : '+'}{option.quantity} {option.symbol} {option.type} ${option.strike} ({option.expiresDay}), premium ${option.premium.toFixed(2)}
+          </p>
+        ))}
       </section>
     </section>
   );

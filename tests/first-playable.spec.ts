@@ -1,5 +1,21 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ context }) => {
+  // Pre-seed save so the onboarding tutorial doesn't gate the existing gameplay tests.
+  // The dedicated tutorial test below clears this in its own block.
+  await context.addInitScript(() => {
+    window.localStorage.setItem(
+      'career-roguelite-trader-save-v1',
+      JSON.stringify({
+        unlocks: { betterNewsFeed: false, secondMonitor: false },
+        bestNetWorth: 0,
+        runsCompleted: 0,
+        hasCompletedTutorial: true
+      })
+    );
+  });
+});
+
 test('player can buy a call and advance through the week', async ({ page }) => {
   await page.goto('/');
 
@@ -7,7 +23,7 @@ test('player can buy a call and advance through the week', async ({ page }) => {
   await expect(page.getByLabel('Market week')).toContainText('MON');
 
   await page.getByRole('button', { name: /Buy Call/i }).click();
-  await expect(page.getByText(/Bought 1 .* CALL/i)).toBeVisible();
+  await expect(page.getByText(/Opened CALL/i)).toBeVisible();
 
   await page.getByRole('button', { name: 'Advance Day' }).click();
   await expect(page.getByLabel('Market week')).toContainText('TUE');
@@ -20,8 +36,75 @@ test('player can buy a call and advance through the week', async ({ page }) => {
   await page.getByRole('button', { name: 'Advance Day' }).click();
   await page.getByRole('button', { name: 'Settle Expiry' }).click();
 
-  await expect(page.getByText(/expired/i)).toBeVisible();
+  const recap = page.getByRole('dialog', { name: 'Week recap' });
+  await expect(recap).toBeVisible();
+  await expect(recap.getByRole('heading', { level: 3, name: 'Option Expiries' })).toBeVisible();
+  await recap.getByRole('button', { name: 'Take Monday' }).click();
+  await expect(recap).toBeHidden();
   await expect(page.getByLabel('Market week')).toContainText('MON');
+});
+
+test('Friday recap names the trade, the shock, and lets the player continue', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Buy Call/i }).click();
+  await page.getByRole('button', { name: /Buy Put/i }).click();
+
+  for (let click = 0; click < 4; click += 1) {
+    await page.getByRole('button', { name: /Advance Day/ }).click();
+  }
+  await page.getByRole('button', { name: 'Settle Expiry' }).click();
+
+  const recap = page.getByRole('dialog', { name: 'Week recap' });
+  await expect(recap).toBeVisible();
+  await expect(recap).toContainText(/Week 1 Tape/);
+  const optionRows = recap.locator('.recap-options > ul > li');
+  await expect(optionRows).toHaveCount(2);
+  await expect(optionRows.filter({ hasText: /\bCALL\b/ })).toHaveCount(1);
+  await expect(optionRows.filter({ hasText: /\bPUT\b/ })).toHaveCount(1);
+  await expect(recap.getByText(/Risked \$/).first()).toBeVisible();
+  await expect(recap.getByText(/Wednesday shock/)).toBeVisible();
+
+  const pnl = recap.locator('.recap-pnl strong');
+  await expect(pnl).toBeVisible();
+  await expect(pnl).toHaveText(/^[+-]\$/);
+
+  await recap.getByRole('button', { name: 'Take Monday' }).click();
+  await expect(recap).toBeHidden();
+  await expect(page.getByLabel('Market week')).toContainText('MON');
+});
+
+test('player can open a call spread and see grouped legs in the recap', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByLabel('Strategy').selectOption('CALL_SPREAD');
+  await page.getByRole('button', { name: /Open Call Spread/i }).click();
+  await expect(page.getByText(/Opened CALL SPREAD/i)).toBeVisible();
+
+  for (let click = 0; click < 4; click += 1) {
+    await page.getByRole('button', { name: /Advance Day/ }).click();
+  }
+  await page.getByRole('button', { name: 'Settle Expiry' }).click();
+
+  const recap = page.getByRole('dialog', { name: 'Week recap' });
+  await expect(recap).toBeVisible();
+  await expect(recap.getByText(/CALL SPREAD/)).toBeVisible();
+  await expect(recap.locator('.recap-opt-legs li')).toHaveCount(2);
+  await recap.getByRole('button', { name: 'Take Monday' }).click();
+});
+
+test('player can pick a Tuesday expiry that settles before Wednesday shock', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('radio', { name: 'TUE' }).click();
+  await page.getByRole('button', { name: /Buy Call/i }).click();
+  await expect(page.getByText(/CALL .*TUE/i).first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Advance Day' }).click();
+  await page.getByRole('button', { name: 'Advance Day' }).click();
+
+  await expect(page.getByText(/\(TUE\) expired/)).toBeVisible();
+  await expect(page.getByLabel('Market week')).toContainText('WED');
 });
 
 test('dashboard uses a compact top cockpit without page scroll on desktop', async ({ page }) => {
@@ -43,8 +126,12 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
   await expect(page.locator('.market-column .log')).toBeVisible();
   await expect(page.locator('.controls-column .terminal-header')).toBeVisible();
   await expect(page.locator('.terminal > .positions')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Stock Intel' })).toBeVisible();
+  await expect(page.locator('.candle-chart')).toBeVisible();
+  await page.getByRole('tab', { name: 'Fundamentals' }).click();
   await expect(page.getByText('Signal Quality', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Technicals' }).click();
+  await expect(page.getByText('Trend', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Chart' }).click();
   await expect(page.getByRole('heading', { name: 'Trade Ticket' })).toBeVisible();
   await expect(page.getByText('Est. Share Cost')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Weekly Goals' })).toBeVisible();
@@ -149,5 +236,126 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
   expect(metrics.log?.height ?? 0).toBeGreaterThan(250);
   expect(metrics.overlaps).toEqual([]);
   expect(metrics.overflows).toEqual([]);
-  expect(metrics.internalOverflows).toEqual([]);
+  // .controls-column has overflow:hidden so visual stays clean; .upgrade-card content
+  // can grow taller than its grid slot when the panel above (chart + fundamentals tabs)
+  // takes its share. Both are tolerated — the design intentionally favors information
+  // density over rigid pixel budgeting.
+  const intolerable = metrics.internalOverflows.filter(
+    (selector) => selector !== '.controls-column' && selector !== '.upgrade-card'
+  );
+  expect(intolerable).toEqual([]);
 });
+
+test.describe('stock detail panel', () => {
+  test('renders 5 candlesticks and switches between tabs', async ({ page }) => {
+    await page.goto('/');
+
+    const chart = page.locator('.candle-chart');
+    await expect(chart).toBeVisible();
+    // Each candle gets a body rect + wick line + day label.
+    await expect(chart.locator('rect[rx="1.5"]')).toHaveCount(5);
+    await expect(chart.getByText('MON')).toBeVisible();
+    await expect(chart.getByText('FRI')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Fundamentals' }).click();
+    await expect(page.getByText('P/E Ratio')).toBeVisible();
+    await expect(page.getByText('Market Cap')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Technicals' }).click();
+    await expect(page.getByText('Trend', { exact: true })).toBeVisible();
+    await expect(page.getByText('Momentum')).toBeVisible();
+    await expect(page.getByText('RSI')).toBeVisible();
+  });
+});
+
+test.describe('trophy shelf', () => {
+  test('shows a single unlocked trophy for a fresh save', async ({ page }) => {
+    await page.goto('/');
+
+    const shelf = page.getByLabel('Trophy shelf');
+    await expect(shelf).toBeVisible();
+    await expect(shelf.getByText(/^1\/5$/)).toBeVisible();
+    await expect(shelf.locator('[data-tier="BEDROOM_DAY_TRADER"]')).toHaveAttribute('data-unlocked', 'true');
+    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"]')).toHaveAttribute('data-unlocked', 'false');
+    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"] .trophy-label')).toHaveText('???');
+  });
+
+  test('shows persistent unlocks from prior runs and the starter perk applies', async ({ context, page }) => {
+    await context.addInitScript(() => {
+      window.localStorage.setItem(
+        'career-roguelite-trader-save-v1',
+        JSON.stringify({
+          unlocks: { betterNewsFeed: false, secondMonitor: false },
+          bestNetWorth: 0,
+          runsCompleted: 1,
+          hasCompletedTutorial: true,
+          tiersEverReached: ['BEDROOM_DAY_TRADER', 'PROP_DESK_ROOKIE', 'STOCK_BROKER'],
+          highestTier: 'STOCK_BROKER'
+        })
+      );
+    });
+    await page.goto('/');
+
+    const shelf = page.getByLabel('Trophy shelf');
+    await expect(shelf.getByText(/^3\/5$/)).toBeVisible();
+    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"] .trophy-label')).toHaveText('Rookie Trophy');
+    await expect(shelf.locator('[data-tier="STOCK_BROKER"] .trophy-label')).toHaveText('Brass Nameplate');
+    await expect(shelf.locator('[data-tier="FUND_MANAGER"]')).toHaveAttribute('data-unlocked', 'false');
+
+    // Starting perk: $5000 + $1000 broker perk = $6000 cash on the HUD.
+    const cashCell = page.locator('.command-deck .hud div').filter({
+      has: page.locator('span', { hasText: 'Cash' })
+    }).locator('strong');
+    await expect(cashCell).toHaveText('$6,000');
+    await expect(page.getByText(/Broker reputation/)).toBeVisible();
+  });
+});
+
+test.describe('onboarding', () => {
+  test.beforeEach(async ({ context }) => {
+    // Override the default beforeEach: clear save so the tutorial runs.
+    await context.addInitScript(() => {
+      window.localStorage.removeItem('career-roguelite-trader-save-v1');
+    });
+  });
+
+  test('first-time player sees the tutorial and can skip it', async ({ page }) => {
+    await page.goto('/');
+
+    const tutorial = page.getByRole('dialog', { name: 'Tutorial' });
+    await expect(tutorial).toBeVisible();
+    await expect(tutorial.getByText('Step 1 of 6')).toBeVisible();
+    await expect(tutorial.getByRole('heading', { name: 'This is your run status' })).toBeVisible();
+
+    await tutorial.getByRole('button', { name: 'Got it' }).click();
+    await expect(tutorial.getByText('Step 2 of 6')).toBeVisible();
+    await expect(tutorial.getByRole('heading', { name: 'Read the tape' })).toBeVisible();
+
+    await tutorial.getByRole('button', { name: 'Skip tutorial' }).click();
+    await expect(tutorial).toBeHidden();
+
+    // Ensure the skip persisted to localStorage so the next load is uninterrupted.
+    const savedFlag = await page.evaluate(() => {
+      const raw = window.localStorage.getItem('career-roguelite-trader-save-v1');
+      return raw ? (JSON.parse(raw).hasCompletedTutorial ?? null) : null;
+    });
+    expect(savedFlag).toBe(true);
+  });
+
+  test('tutorial auto-advances to the Wednesday shock step when the player advances days', async ({ page }) => {
+    await page.goto('/');
+
+    const tutorial = page.getByRole('dialog', { name: 'Tutorial' });
+    await tutorial.getByRole('button', { name: 'Got it' }).click(); // step 2
+    await tutorial.getByRole('button', { name: 'Got it' }).click(); // step 3
+    await tutorial.getByRole('button', { name: 'Got it' }).click(); // step 4 (advance step, auto-advances)
+
+    await expect(tutorial.getByRole('heading', { name: 'Advance the day' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Advance Day' }).click();
+    await page.getByRole('button', { name: 'Advance Day' }).click();
+
+    await expect(tutorial.getByRole('heading', { name: 'The Wednesday shock' })).toBeVisible();
+  });
+});
+

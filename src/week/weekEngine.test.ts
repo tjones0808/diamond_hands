@@ -15,7 +15,10 @@ const run: RunState = {
   sharePositions: [],
   optionPositions: [],
   isBankrupt: false,
-  weekLog: []
+  weekLog: [],
+  weekOptionResults: [],
+  fundamentalScore: 0,
+  technicalScore: 0
 };
 
 describe('advanceDay', () => {

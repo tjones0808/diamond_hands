@@ -5,6 +5,7 @@ export default defineConfig({
   timeout: 30_000,
   use: {
     baseURL: 'http://127.0.0.1:5173',
+    viewport: { width: 1440, height: 900 },
     trace: 'on-first-retry'
   },
   webServer: {
@@ -15,7 +16,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } }
     }
   ]
 });

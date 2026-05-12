@@ -20,4 +20,16 @@ describe('generateMarketWeek', () => {
       }
     }
   });
+
+  it('produces OHLC where high >= max(open,close) and low <= min(open,close)', () => {
+    const week = generateMarketWeek(2026);
+
+    for (const ticker of week.tickers) {
+      for (const point of ticker.prices) {
+        expect(point.high).toBeGreaterThanOrEqual(Math.max(point.open, point.close));
+        expect(point.low).toBeLessThanOrEqual(Math.min(point.open, point.close));
+        expect(point.volume).toBeGreaterThan(0);
+      }
+    }
+  });
 });

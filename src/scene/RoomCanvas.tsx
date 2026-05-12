@@ -35,7 +35,7 @@ export function RoomCanvas({ run, save }: { run: RunState; save: SaveState }) {
     if (!gameRef.current) return;
     gameRef.current.scene.stop('RoomScene');
     gameRef.current.scene.start('RoomScene', { run, save });
-  }, [run.week, run.day, run.cash, run.reputation, save.unlocks.secondMonitor, save.unlocks.betterNewsFeed]);
+  }, [run.week, run.day, run.cash, run.reputation, run.tier, save.unlocks.secondMonitor, save.unlocks.betterNewsFeed, save.tiersEverReached.join(',')]);
 
   return <div className="room-canvas" ref={hostRef} />;
 }

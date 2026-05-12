@@ -64,7 +64,72 @@ export class RoomScene extends Phaser.Scene {
     }
 
     this.drawDesk(width, height, deskY, palette, compact);
+    this.drawArtifacts(width, deskY, palette, compact);
     this.drawRoomLabels(gate.title, gate.roomLabel, hasSecondMonitor, hasBetterFeed, palette, compact);
+  }
+
+  private drawArtifacts(width: number, deskY: number, palette: RoomPalette, compact: boolean) {
+    const reached = new Set(this.save?.tiersEverReached ?? []);
+    const shelfY = deskY - (compact ? 24 : 30);
+    const startX = 60;
+    const gap = compact ? 30 : 38;
+    let cursor = startX;
+
+    if (reached.has('BEDROOM_DAY_TRADER')) {
+      this.drawMug(cursor, shelfY, palette);
+      cursor += gap;
+    }
+    if (reached.has('PROP_DESK_ROOKIE')) {
+      this.drawTrophy(cursor, shelfY, palette);
+      cursor += gap;
+    }
+    if (reached.has('STOCK_BROKER')) {
+      this.drawNameplate(cursor, shelfY, palette);
+      cursor += gap;
+    }
+    if (reached.has('FUND_MANAGER')) {
+      this.drawFramedClipping(width - 60, 162, palette);
+    }
+    if (reached.has('HEDGE_FUND_FOUNDER')) {
+      this.drawBull(cursor, shelfY, palette);
+    }
+  }
+
+  private drawMug(x: number, y: number, palette: RoomPalette) {
+    this.add.rectangle(x, y, 16, 18, 0x9ca3af, 0.85).setStrokeStyle(1, 0x111827, 0.7);
+    this.add.rectangle(x + 10, y, 4, 10, 0x9ca3af, 0.85);
+    this.add.text(x - 14, y + 12, 'MUG', { color: colorToHex(palette.secondary), fontFamily: 'Consolas, monospace', fontSize: '9px' });
+  }
+
+  private drawTrophy(x: number, y: number, palette: RoomPalette) {
+    this.add.rectangle(x, y - 6, 12, 16, 0xfbbf24, 0.92).setStrokeStyle(1, 0xb45309, 0.8);
+    this.add.rectangle(x, y + 6, 18, 6, 0xb45309, 0.92);
+    this.add.text(x - 16, y + 12, 'TROPHY', { color: colorToHex(palette.accent), fontFamily: 'Consolas, monospace', fontSize: '9px' });
+  }
+
+  private drawNameplate(x: number, y: number, palette: RoomPalette) {
+    this.add.rectangle(x, y + 2, 28, 12, 0xfbbf24, 0.88).setStrokeStyle(1, 0x78350f, 0.9);
+    this.add.text(x - 13, y - 2, 'BROKER', { color: '#1f2937', fontFamily: 'Consolas, monospace', fontSize: '8px', fontStyle: '700' });
+    this.add.text(x - 18, y + 14, 'PLATE', { color: colorToHex(palette.accent), fontFamily: 'Consolas, monospace', fontSize: '9px' });
+  }
+
+  private drawFramedClipping(x: number, y: number, palette: RoomPalette) {
+    this.add.rectangle(x, y, 90, 60, 0xd1d5db, 0.94).setStrokeStyle(2, 0x78350f, 0.9);
+    this.add.rectangle(x, y, 78, 48, 0xfefce8, 0.95);
+    this.add.text(x - 34, y - 18, 'ONE TO WATCH', { color: '#1f2937', fontFamily: 'Consolas, monospace', fontSize: '9px', fontStyle: '700' });
+    this.add.text(x - 34, y - 4, 'trade weekly', { color: '#475569', fontFamily: 'Consolas, monospace', fontSize: '7px' });
+    this.add.rectangle(x - 10, y + 12, 56, 2, 0x475569, 0.7);
+    this.add.rectangle(x - 10, y + 16, 56, 2, 0x475569, 0.7);
+    this.add.text(x - 36, y + 30, 'PRESS', { color: colorToHex(palette.accent), fontFamily: 'Consolas, monospace', fontSize: '9px' });
+  }
+
+  private drawBull(x: number, y: number, palette: RoomPalette) {
+    this.add.ellipse(x, y - 4, 22, 14, 0xb45309, 0.95).setStrokeStyle(1, 0x431407, 0.9);
+    this.add.rectangle(x - 9, y + 4, 4, 8, 0xb45309, 0.95);
+    this.add.rectangle(x + 9, y + 4, 4, 8, 0xb45309, 0.95);
+    this.add.triangle(x - 9, y - 10, 0, 0, 6, -6, -2, -4, 0xfde68a, 0.95);
+    this.add.triangle(x + 9, y - 10, 0, 0, -6, -6, 2, -4, 0xfde68a, 0.95);
+    this.add.text(x - 12, y + 14, 'BULL', { color: colorToHex(palette.accent), fontFamily: 'Consolas, monospace', fontSize: '9px' });
   }
 
   private drawMatrixBackdrop(width: number, height: number, palette: RoomPalette) {

@@ -1,4 +1,4 @@
-import type { MarketRegime, MarketTicker, WeekDay } from '../game/types';
+import type { MarketRegime, MarketTicker, PricePoint, WeekDay } from '../game/types';
 import { tickerDefinitions } from '../content/tickers';
 import { createRng } from '../simulation/rng';
 
@@ -28,12 +28,32 @@ export function generateMarketWeek(seed: number): GeneratedMarketWeek {
   return {
     regime,
     tickers: selected.map((definition) => {
-      let price = definition.basePrice;
-      const prices = weekDays.map((day) => {
+      let lastClose = definition.basePrice;
+      const prices: PricePoint[] = weekDays.map((day) => {
         const drift = regimeBias[regime] + (definition.quality - 0.5) * 0.01;
         const noise = rng.float(-definition.volatility, definition.volatility);
-        price = Math.max(1, price * (1 + drift + noise));
-        return { day, price: roundMoney(price) };
+        const close = Math.max(1, lastClose * (1 + drift + noise));
+
+        const wickRange = Math.max(0.005, definition.volatility * 0.55);
+        const intradayHigh = Math.max(lastClose, close) * (1 + rng.float(0, wickRange));
+        const intradayLow = Math.min(lastClose, close) * (1 - rng.float(0, wickRange));
+
+        const baseVolume = 100_000 + definition.basePrice * 800;
+        const volumeNoise = rng.float(0.6, 1.6);
+        const stressMultiplier = 1 + Math.abs((close - lastClose) / lastClose) * 4;
+        const volume = Math.round(baseVolume * volumeNoise * stressMultiplier);
+
+        const point: PricePoint = {
+          day,
+          price: roundMoney(close),
+          open: roundMoney(lastClose),
+          high: roundMoney(intradayHigh),
+          low: roundMoney(intradayLow),
+          close: roundMoney(close),
+          volume
+        };
+        lastClose = close;
+        return point;
       });
 
       return {

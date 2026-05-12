@@ -1,7 +1,8 @@
-import type { RunState } from '../game/types';
+import type { GameAction } from '../game/reducer';
+import type { RunState, SaveState } from '../game/types';
 import { getCurrentPrice } from '../game/selectors';
 
-export function MarketTape({ run }: { run: RunState }) {
+export function MarketTape({ run, save, dispatch }: { run: RunState; save: SaveState; dispatch: (action: GameAction) => void }) {
   const quotes = run.tickers.map((ticker) => {
     const price = getCurrentPrice(run, ticker.definition.symbol);
     const open = ticker.prices[0]?.price ?? price;
@@ -33,6 +34,15 @@ export function MarketTape({ run }: { run: RunState }) {
         <span>{run.marketRegime.replaceAll('_', ' ')}</span>
         <strong>W{run.week} / {run.day}</strong>
       </div>
+      <button
+        type="button"
+        className="tape-mute"
+        aria-label={save.audioMuted ? 'Unmute audio' : 'Mute audio'}
+        aria-pressed={save.audioMuted}
+        onClick={() => dispatch({ type: 'TOGGLE_AUDIO_MUTE' })}
+      >
+        {save.audioMuted ? '🔇' : '🔊'}
+      </button>
     </section>
   );
 }
