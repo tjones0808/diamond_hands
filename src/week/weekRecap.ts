@@ -27,6 +27,9 @@ export interface BuildWeekResultInput {
   nextRunPerk?: StartingPerk;
   bossResolution?: BossWeekResolution;
   bossDefinition?: BossWeekDefinition;
+  balancedTrader?: boolean;
+  weekFundamentalTrades?: number;
+  weekTechnicalTrades?: number;
 }
 
 export function buildWeekResult(input: BuildWeekResultInput): WeekResult {
@@ -55,6 +58,9 @@ export function buildWeekResult(input: BuildWeekResultInput): WeekResult {
     nextRunPerk: input.nextRunPerk,
     bossResolution: input.bossResolution,
     bossDefinition: input.bossDefinition,
+    balancedTrader: input.balancedTrader,
+    weekFundamentalTrades: input.weekFundamentalTrades ?? 0,
+    weekTechnicalTrades: input.weekTechnicalTrades ?? 0,
     lesson: buildLesson({ netWorthDelta, optionResults, optionsTotalPnl, event: input.event, promoted: input.promoted, bossResolution: input.bossResolution }),
     headline: buildHeadline({ netWorthDelta, optionResults, optionsTotalPnl, promoted: input.promoted, bossResolution: input.bossResolution })
   };

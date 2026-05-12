@@ -9,7 +9,10 @@ export function emptyStats(): LifetimeStats {
     totalBossWeeksFailed: 0,
     totalWeeksSurvived: 0,
     biggestSingleWeekGain: 0,
-    biggestSingleWeekLoss: 0
+    biggestSingleWeekLoss: 0,
+    totalFundamentalTrades: 0,
+    totalTechnicalTrades: 0,
+    totalBalancedWeeks: 0
   };
 }
 
@@ -21,7 +24,10 @@ export function applyWeekResultToStats(stats: LifetimeStats, result: WeekResult)
     totalBossWeeksPassed: stats.totalBossWeeksPassed + (result.bossResolution?.passed ? 1 : 0),
     totalBossWeeksFailed: stats.totalBossWeeksFailed + (result.bossResolution && !result.bossResolution.passed ? 1 : 0),
     biggestSingleWeekGain: Math.max(stats.biggestSingleWeekGain, result.netWorthDelta),
-    biggestSingleWeekLoss: Math.min(stats.biggestSingleWeekLoss, result.netWorthDelta)
+    biggestSingleWeekLoss: Math.min(stats.biggestSingleWeekLoss, result.netWorthDelta),
+    totalFundamentalTrades: stats.totalFundamentalTrades + (result.weekFundamentalTrades ?? 0),
+    totalTechnicalTrades: stats.totalTechnicalTrades + (result.weekTechnicalTrades ?? 0),
+    totalBalancedWeeks: stats.totalBalancedWeeks + (result.balancedTrader ? 1 : 0)
   };
 }
 

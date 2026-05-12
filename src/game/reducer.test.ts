@@ -37,9 +37,15 @@ describe('boss week resolution in the reducer', () => {
   it('fails the boss week and applies penalty when net worth misses', () => {
     const base = stateAtFridayWithActiveBossWeek();
     const target = base.run.bossWeek!.definition.netWorthTarget;
+    // The player lost ground from Monday to Friday in this scenario.
     const state: GameState = {
       ...base,
-      run: { ...base.run, cash: target - 800 }
+      run: {
+        ...base.run,
+        cash: target - 800,
+        weekStartNetWorth: target + 500,
+        weekStartCash: target + 500
+      }
     };
     const before = state.run.reputation;
 
@@ -72,6 +78,33 @@ describe('boss week resolution in the reducer', () => {
     expect(next.run.tier).toBe('BEDROOM_DAY_TRADER');
     // But the new week should now arm the boss week since gates are met.
     expect(next.run.bossWeek?.definition.forTier).toBe('BEDROOM_DAY_TRADER');
+  });
+});
+
+describe('weekly recap delta', () => {
+  it('measures net-worth delta from the Monday-open baseline, not from Friday morning', () => {
+    // Player started the week with $5,000, made $3,000 trading shares earlier in the week,
+    // and is now sitting on $8,000 cash with no open positions on Friday morning.
+    const initial = createInitialGameState(20260508);
+    const state: GameState = {
+      save: { ...initial.save },
+      run: {
+        ...initial.run,
+        day: 'FRI',
+        cash: 8000,
+        weekStartCash: 5000,
+        weekStartNetWorth: 5000,
+        sharePositions: [],
+        optionPositions: [],
+        weekOptionResults: []
+      }
+    };
+
+    const next = gameReducer(state, { type: 'ADVANCE_DAY' });
+
+    expect(next.run.weekResult?.startNetWorth).toBe(5000);
+    expect(next.run.weekResult?.netWorthDelta).toBe(3000);
+    expect(next.run.weekResult?.cashDelta).toBe(3000);
   });
 });
 

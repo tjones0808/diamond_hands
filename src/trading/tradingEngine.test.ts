@@ -27,7 +27,17 @@ const baseRun: RunState = {
   weekLog: [],
   weekOptionResults: [],
   fundamentalScore: 0,
-  technicalScore: 0
+  technicalScore: 0,
+  weekFundamentalScore: 0,
+  weekTechnicalScore: 0,
+  stress: 0,
+  confidence: 0,
+  marginUsed: 0,
+  tickerSeries: {},
+  weekStartNetWorth: 5000,
+  weekStartCash: 5000,
+  restingOrders: [],
+  clients: []
 };
 
 describe('tradingEngine', () => {
@@ -38,18 +48,22 @@ describe('tradingEngine', () => {
     expect(run.sharePositions).toEqual([{ symbol: 'NVRA', quantity: 10, averagePrice: 50 }]);
   });
 
-  it('buys a call option using premium times quantity', () => {
+  it('buys a call option using premium times quantity times 100 (contract multiplier)', () => {
+    // Premium $4.50 per share × 2 contracts × 100 shares per contract = $900 debit
     const run = buyCall(baseRun, 'NVRA', 55, 2, 4.5);
 
-    expect(run.cash).toBe(4991);
+    expect(run.cash).toBe(4100);
     expect(run.optionPositions[0]).toMatchObject({ symbol: 'NVRA', type: 'CALL', strike: 55, quantity: 2 });
   });
 
-  it('settles calls at expiry', () => {
+  it('settles calls at expiry using the 100x contract multiplier', () => {
+    // 1 contract bought for $3 × 100 = $300 debit. Cash: 5000 - 300 = 4700.
+    // Final price $62, strike $55, intrinsic $7 × 100 = $700 payout. Cash: 4700 + 700 = 5400.
     const withCall = buyCall(baseRun, 'NVRA', 55, 1, 3);
     const settled = settleOptions(withCall, { NVRA: 62 });
 
-    expect(settled.cash).toBe(5004);
+    expect(withCall.cash).toBe(4700);
+    expect(settled.cash).toBe(5400);
     expect(settled.optionPositions).toHaveLength(0);
     expect(settled.weekLog.at(-1)).toContain('expired in the money');
   });
@@ -73,6 +87,7 @@ describe('tradingEngine', () => {
   });
 
   it('opens a call spread as net debit and tracks both legs under a strategy id', () => {
+    // Long $4 - short $2 = $2 net debit per share × 1 contract × 100 = $200 debit
     const run = openMultiLegOptions(baseRun, {
       strategyType: 'CALL_SPREAD',
       expiresDay: 'FRI',
@@ -82,7 +97,7 @@ describe('tradingEngine', () => {
       ]
     });
 
-    expect(run.cash).toBe(4998);
+    expect(run.cash).toBe(4800);
     expect(run.optionPositions).toHaveLength(2);
     expect(run.optionPositions[0].strategyId).toBe(run.optionPositions[1].strategyId);
     expect(run.optionPositions[0].strategyType).toBe('CALL_SPREAD');
@@ -90,6 +105,8 @@ describe('tradingEngine', () => {
   });
 
   it('settles a call spread paying spread width minus debit when both legs are deep ITM', () => {
+    // $200 debit. ITM: long pays max(0, 70-50)*100 = $2000, short owes max(0, 70-55)*100 = $1500
+    // Net settlement: $2000 - $1500 = $500. Cash after: 4800 + 500 = 5300. Total PnL: $500 - $200 = $300
     const run = openMultiLegOptions(baseRun, {
       strategyType: 'CALL_SPREAD',
       expiresDay: 'FRI',
@@ -100,10 +117,10 @@ describe('tradingEngine', () => {
     });
     const settled = settleOptions(run, { NVRA: 70 });
 
-    expect(settled.cash).toBe(5003);
+    expect(settled.cash).toBe(5300);
     expect(settled.weekOptionResults).toHaveLength(2);
     const totalPnl = settled.weekOptionResults.reduce((total, item) => total + item.pnl, 0);
-    expect(totalPnl).toBeCloseTo(3, 2);
+    expect(totalPnl).toBeCloseTo(300, 2);
   });
 
   it('settles only options matching a given expiry day', () => {

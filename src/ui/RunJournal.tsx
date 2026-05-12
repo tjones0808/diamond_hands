@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { SaveState } from '../game/types';
 import { tierLabel } from '../content/tierRewards';
 
@@ -6,14 +7,9 @@ export function RunJournal({ save }: { save: SaveState }) {
   const [open, setOpen] = useState(false);
   const stats = save.stats;
 
-  return (
-    <>
-      <button type="button" className="journal-toggle" aria-label="Open run journal" onClick={() => setOpen(true)}>
-        📓 Journal
-      </button>
-      {open ? (
-        <div className="journal-backdrop" role="dialog" aria-modal="true" aria-label="Run journal" onClick={() => setOpen(false)}>
-          <section className="journal-panel" onClick={(event) => event.stopPropagation()}>
+  const modal = open ? (
+    <div className="journal-backdrop" role="dialog" aria-modal="true" aria-label="Run journal" onClick={() => setOpen(false)}>
+      <section className="journal-panel" onClick={(event) => event.stopPropagation()}>
             <header>
               <div>
                 <span>Run Journal</span>
@@ -33,6 +29,11 @@ export function RunJournal({ save }: { save: SaveState }) {
               <Stat label="Worst week" value={formatSigned(stats.biggestSingleWeekLoss)} tone="loss" />
               <Stat label="Best net worth" value={`$${Math.round(save.bestNetWorth).toLocaleString()}`} />
               <Stat label="Highest tier" value={tierLabel(save.highestTier)} />
+              <Stat
+                label="Trading style"
+                value={tradingStyleLabel(stats.totalFundamentalTrades, stats.totalTechnicalTrades)}
+              />
+              <Stat label="Balanced weeks" value={stats.totalBalancedWeeks.toString()} />
             </section>
 
             <section className="journal-recent" aria-label="Recent runs">
@@ -53,10 +54,17 @@ export function RunJournal({ save }: { save: SaveState }) {
                   ))}
                 </ul>
               )}
-            </section>
-          </section>
-        </div>
-      ) : null}
+        </section>
+      </section>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <button type="button" className="journal-toggle" aria-label="Open run journal" onClick={() => setOpen(true)}>
+        📓 Journal
+      </button>
+      {modal && typeof document !== 'undefined' ? createPortal(modal, document.body) : null}
     </>
   );
 }
@@ -68,6 +76,16 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'ga
       <b className={tone}>{value}</b>
     </span>
   );
+}
+
+function tradingStyleLabel(fundamental: number, technical: number) {
+  const total = fundamental + technical;
+  if (total === 0) return '—';
+  const fpct = Math.round((fundamental / total) * 100);
+  const tpct = 100 - fpct;
+  if (fpct >= 70) return `Fundamental ${fpct}%`;
+  if (tpct >= 70) return `Technical ${tpct}%`;
+  return `${fpct}F / ${tpct}T`;
 }
 
 function formatSigned(value: number) {

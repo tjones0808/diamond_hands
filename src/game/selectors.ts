@@ -7,7 +7,7 @@ export function getNetWorth(run: RunState) {
     return total + position.quantity * price;
   }, 0);
 
-  return Math.round((run.cash + shareValue) * 100) / 100;
+  return Math.round((run.cash + shareValue - run.marginUsed) * 100) / 100;
 }
 
 export function getCurrentPrice(run: RunState, symbol: string) {

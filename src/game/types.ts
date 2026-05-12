@@ -5,6 +5,7 @@ export type CareerTier = 'BEDROOM_DAY_TRADER' | 'PROP_DESK_ROOKIE' | 'STOCK_BROK
 export type InstrumentType = 'SHARE' | 'CALL' | 'PUT';
 
 export type MarketCap = 'SMALL' | 'MID' | 'LARGE' | 'MEGA';
+export type AnalystRating = 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
 
 export interface TickerFundamentals {
   peRatio: number;
@@ -15,6 +16,15 @@ export interface TickerFundamentals {
   narrative: string;
 }
 
+export interface TickerSnapshot {
+  analystRating: AnalystRating;
+  analystTargetPct: number;
+  shortInterestPct: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  recentHeadlines: string[];
+}
+
 export interface TickerDefinition {
   symbol: string;
   name: string;
@@ -23,6 +33,8 @@ export interface TickerDefinition {
   volatility: number;
   quality: number;
   fundamentals: TickerFundamentals;
+  /** Recurring narrative arcs for this ticker. Index = (seed + week) % length so it cycles deterministically. */
+  narrativeArc?: string[];
 }
 
 export interface PricePoint {
@@ -38,7 +50,9 @@ export interface PricePoint {
 export interface MarketTicker {
   definition: TickerDefinition;
   prices: PricePoint[];
+  priorHistory: PricePoint[];
   signal: string;
+  snapshot: TickerSnapshot;
 }
 
 export type OptionSide = 'LONG' | 'SHORT';
@@ -116,6 +130,9 @@ export interface WeekResult {
   nextRunPerk?: StartingPerk;
   bossResolution?: BossWeekResolution;
   bossDefinition?: BossWeekDefinition;
+  balancedTrader?: boolean;
+  weekFundamentalTrades?: number;
+  weekTechnicalTrades?: number;
   lesson: string;
   headline: string;
 }
@@ -152,6 +169,53 @@ export interface RunState {
   bossWeek?: BossWeekState;
   fundamentalScore: number;
   technicalScore: number;
+  weekFundamentalScore: number;
+  weekTechnicalScore: number;
+  stress: number;
+  confidence: number;
+  marginUsed: number;
+  /** Full bar history per ticker symbol. Accumulates across weeks so charts stay continuous. */
+  tickerSeries: Record<string, PricePoint[]>;
+  /** Net worth captured at the START of this week (Monday open). Used to compute the true weekly delta. */
+  weekStartNetWorth: number;
+  /** Cash captured at the START of this week (Monday open). */
+  weekStartCash: number;
+  restingOrders: RestingOrder[];
+  clients: Client[];
+}
+
+export type RiskTolerance = 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE';
+
+export interface ClientTemplate {
+  id: string;
+  name: string;
+  backstory: string;
+  riskTolerance: RiskTolerance;
+}
+
+export interface Client extends ClientTemplate {
+  /** Capital you manage on their behalf. */
+  balance: number;
+  /** Initial balance — used to detect redemption-triggering drawdown. */
+  startingBalance: number;
+  /** 0–100. Drops on bad weeks, recovers on good. At 0 they redeem. */
+  patience: number;
+  /** Weeks this client has been with you. */
+  weeksWithYou: number;
+  /** Fee earned from this client over the run (running total, informational). */
+  lifetimeFeesPaid: number;
+}
+
+export type RestingOrderType = 'STOP_LOSS' | 'LIMIT_BUY' | 'LIMIT_SELL';
+
+export interface RestingOrder {
+  id: string;
+  type: RestingOrderType;
+  symbol: string;
+  triggerPrice: number;
+  quantity: number;
+  createdDay: WeekDay;
+  createdWeek: number;
 }
 
 export interface BossWeekDefinition {
@@ -188,6 +252,14 @@ export interface SaveState {
   audioMuted: boolean;
   stats: LifetimeStats;
   recentRuns: RunSummary[];
+  settings: SettingsState;
+}
+
+export interface SettingsState {
+  sfxVolume: number;       // 0-1
+  musicVolume: number;     // 0-1
+  reducedMotion: boolean;  // disable big animations
+  colorBlindPalette: boolean; // swap green/red for protan-friendly colors
 }
 
 export interface LifetimeStats {
@@ -199,6 +271,9 @@ export interface LifetimeStats {
   totalWeeksSurvived: number;
   biggestSingleWeekGain: number;
   biggestSingleWeekLoss: number;
+  totalFundamentalTrades: number;
+  totalTechnicalTrades: number;
+  totalBalancedWeeks: number;
 }
 
 export interface RunSummary {

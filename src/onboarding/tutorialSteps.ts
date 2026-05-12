@@ -9,6 +9,11 @@ export interface TutorialStep {
   /** When true, the step auto-advances once `isComplete(run)` returns true. */
   autoAdvance?: boolean;
   isComplete?: (run: RunState) => boolean;
+  /**
+   * Additional CSS selectors that should remain sharp (not dimmed/blurred) during this
+   * step so the player can still interact with the controls needed to advance.
+   */
+  keepSharp?: string[];
 }
 
 export const tutorialSteps: TutorialStep[] = [
@@ -40,7 +45,8 @@ export const tutorialSteps: TutorialStep[] = [
     body: 'Click Advance Day to move through the week. Watch out — Wednesday brings a market shock.',
     placement: 'left',
     autoAdvance: true,
-    isComplete: (run) => Boolean(run.activeEvent)
+    isComplete: (run) => Boolean(run.activeEvent),
+    keepSharp: ['.market-column', '.trade-ticket', '.controls-column .terminal-header']
   },
   {
     id: 'shock',
@@ -49,7 +55,8 @@ export const tutorialSteps: TutorialStep[] = [
     body: "An event card hit one of your tickers. Adjust before Friday — close options, hedge with the opposite side, or hold and pray.",
     placement: 'bottom',
     autoAdvance: true,
-    isComplete: (run) => Boolean(run.weekResult)
+    isComplete: (run) => Boolean(run.weekResult),
+    keepSharp: ['.market-column', '.trade-ticket', '.controls-column .terminal-header']
   },
   {
     id: 'recap',

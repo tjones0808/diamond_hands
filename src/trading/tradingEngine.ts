@@ -7,7 +7,9 @@ import type {
   RunState,
   WeekDay
 } from '../game/types';
-import { estimatePremium, settleOptionValue } from './options';
+import { CONTRACT_SIZE, estimatePremium, settleOptionValue } from './options';
+import { getBuyingPower } from './margin';
+import { getShareCommissionPerShare } from '../career/tierUnlocks';
 
 export interface OpenOptionLeg {
   symbol: string;
@@ -25,8 +27,11 @@ export interface OpenMultiLegInput {
 }
 
 export function buyShares(run: RunState, symbol: string, quantity: number, price: number): RunState {
+  const commission = roundMoney(getShareCommissionPerShare(run.tier) * quantity);
   const cost = roundMoney(quantity * price);
-  if (cost > run.cash) return addLog(run, `Not enough cash to buy ${quantity} ${symbol} shares.`);
+  const totalOutlay = roundMoney(cost + commission);
+  const buyingPower = getBuyingPower(run);
+  if (totalOutlay > buyingPower) return addLog(run, `Not enough buying power to buy ${quantity} ${symbol} shares.`);
 
   const existing = run.sharePositions.find((position) => position.symbol === symbol);
   const sharePositions = existing
@@ -38,7 +43,21 @@ export function buyShares(run: RunState, symbol: string, quantity: number, price
       })
     : [...run.sharePositions, { symbol, quantity, averagePrice: price }];
 
-  return addLog({ ...run, cash: roundMoney(run.cash - cost), sharePositions }, `Bought ${quantity} ${symbol} shares.`);
+  // If cost exceeds cash, the excess is borrowed on margin. Commission is paid in cash if possible.
+  const cashSpent = Math.min(run.cash, totalOutlay);
+  const newMargin = Math.max(0, totalOutlay - run.cash);
+  const noteSuffix = newMargin > 0 ? ` ($${newMargin.toFixed(2)} on margin)` : '';
+  const commissionNote = commission > 0 ? ` Commission $${commission.toFixed(2)}.` : '';
+
+  return addLog(
+    {
+      ...run,
+      cash: roundMoney(run.cash - cashSpent),
+      marginUsed: roundMoney(run.marginUsed + newMargin),
+      sharePositions
+    },
+    `Bought ${quantity} ${symbol} shares.${noteSuffix}${commissionNote}`
+  );
 }
 
 export function sellShares(run: RunState, symbol: string, quantity: number, price: number): RunState {
@@ -53,9 +72,23 @@ export function sellShares(run: RunState, symbol: string, quantity: number, pric
     : run.sharePositions.filter((position) => position.symbol !== symbol);
   const profit = roundMoney((price - existing.averagePrice) * sellQuantity);
 
+  const commission = roundMoney(getShareCommissionPerShare(run.tier) * sellQuantity);
+  const netProceeds = roundMoney(proceeds - commission);
+
+  // Auto-pay down margin first, then deposit remaining into cash.
+  const marginPaydown = Math.min(run.marginUsed, netProceeds);
+  const cashCredit = netProceeds - marginPaydown;
+  const paydownNote = marginPaydown > 0 ? ` (paid down $${marginPaydown.toFixed(2)} margin)` : '';
+  const commissionNote = commission > 0 ? ` Commission $${commission.toFixed(2)}.` : '';
+
   return addLog(
-    { ...run, cash: roundMoney(run.cash + proceeds), sharePositions },
-    `Sold ${sellQuantity} ${symbol} shares for $${proceeds} (${profit >= 0 ? '+' : ''}$${profit}).`
+    {
+      ...run,
+      cash: roundMoney(run.cash + cashCredit),
+      marginUsed: roundMoney(run.marginUsed - marginPaydown),
+      sharePositions
+    },
+    `Sold ${sellQuantity} ${symbol} shares for $${proceeds} (${profit >= 0 ? '+' : ''}$${profit}).${paydownNote}${commissionNote}`
   );
 }
 
@@ -93,7 +126,8 @@ export function openMultiLegOptions(run: RunState, input: OpenMultiLegInput): Ru
   if (input.legs.length === 0) return addLog(run, 'No legs to open.');
 
   const netDebit = roundMoney(input.legs.reduce((total, leg) => {
-    const cashFlow = leg.side === 'LONG' ? leg.premium * leg.quantity : -(leg.premium * leg.quantity);
+    const legCost = leg.premium * leg.quantity * CONTRACT_SIZE;
+    const cashFlow = leg.side === 'LONG' ? legCost : -legCost;
     return total + cashFlow;
   }, 0));
 
@@ -141,7 +175,7 @@ export function closeOptionsForSymbol(
 
   const proceeds = roundMoney(closing.reduce((total, option) => {
     const remaining = remainingDays(run.day, option.expiresDay);
-    const markValue = estimatePremium(currentPrice, option.strike, volatility, option.type, remaining) * option.quantity;
+    const markValue = estimatePremium(currentPrice, option.strike, volatility, option.type, remaining) * option.quantity * CONTRACT_SIZE;
     return total + (option.side === 'LONG' ? markValue : -markValue);
   }, 0));
   const optionPositions = run.optionPositions.filter((option) => option.symbol !== symbol);
@@ -168,8 +202,8 @@ export function settleExpiringOptions(
   for (const option of expiring) {
     const finalPrice = finalPrices[option.symbol];
     if (finalPrice === undefined) continue;
-    const intrinsicValue = settleOptionValue(option.type, option.strike, finalPrice, option.quantity);
-    const premiumPaid = roundMoney(option.premium * option.quantity);
+    const intrinsicValue = settleOptionValue(option.type, option.strike, finalPrice, option.quantity) * CONTRACT_SIZE;
+    const premiumPaid = roundMoney(option.premium * option.quantity * CONTRACT_SIZE);
     let settlementValue: number;
     let pnl: number;
 

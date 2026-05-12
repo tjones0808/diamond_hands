@@ -1,5 +1,8 @@
 import type { OptionExpiryDay, WeekDay } from '../game/types';
 
+/** Real US-listed equity options control 100 shares of the underlying per contract. */
+export const CONTRACT_SIZE = 100;
+
 const dayIndex: Record<WeekDay, number> = { MON: 0, TUE: 1, WED: 2, THU: 3, FRI: 4 };
 
 export function daysToExpiry(currentDay: WeekDay, expiresDay: OptionExpiryDay): number {

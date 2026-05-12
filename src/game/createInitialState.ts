@@ -1,5 +1,5 @@
 import type { GameState, SaveState } from './types';
-import { generateMarketWeek } from '../market/marketGenerator';
+import { generateInitialMarketState } from '../market/marketGenerator';
 import { getStartingPerk } from '../content/tierRewards';
 import { emptyStats } from '../save/runJournal';
 
@@ -16,12 +16,18 @@ export function createInitialSave(): SaveState {
     highestTier: 'BEDROOM_DAY_TRADER',
     audioMuted: false,
     stats: emptyStats(),
-    recentRuns: []
+    recentRuns: [],
+    settings: {
+      sfxVolume: 0.5,
+      musicVolume: 0.22,
+      reducedMotion: false,
+      colorBlindPalette: false
+    }
   };
 }
 
 export function createInitialGameState(seed = Date.now(), save = createInitialSave()): GameState {
-  const market = generateMarketWeek(seed);
+  const market = generateInitialMarketState(seed);
   const perk = getStartingPerk(save.highestTier);
 
   return {
@@ -44,7 +50,17 @@ export function createInitialGameState(seed = Date.now(), save = createInitialSa
         : ['You boot up your battered trading rig.'],
       weekOptionResults: [],
       fundamentalScore: 0,
-      technicalScore: 0
+      technicalScore: 0,
+      weekFundamentalScore: 0,
+      weekTechnicalScore: 0,
+      stress: 0,
+      confidence: 0,
+      marginUsed: 0,
+      tickerSeries: market.tickerSeries,
+      weekStartNetWorth: 5000 + perk.bonusCash,
+      weekStartCash: 5000 + perk.bonusCash,
+      restingOrders: [],
+      clients: []
     }
   };
 }

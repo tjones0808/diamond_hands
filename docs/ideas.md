@@ -1,35 +1,55 @@
 # Career Roguelite Trader Ideas
 
-## Current Sprint
-
-- Trading-style rewards: surface fundamentalScore/technicalScore in the Run Journal as lifetime style splits, award a "Balanced Trader" reputation bonus on a clean diversified week.
-
 ## Recently Shipped
 
 - Stock Intel panel (signal quality, volatility, sparkline, thesis line)
 - Trade Ticket with size inputs, cost/risk estimates, buy/sell/close
 - Weekly Goals tied to promotion gates
 - Win/Loss Feedback: Friday recap modal with per-option P/L, Wednesday shock echo, lesson line, promotion banner
-- Event deck expanded from 4 to 21 cards across all sectors
-- Options Chaos Upgrade: Call/Put Spreads, Straddles, TUE/THU/FRI DTE picker, theta-aware premiums, per-day settlement
-- Onboarding First Week: 6-step coachmark tutorial with auto-advance on natural triggers, Skip button, persistent flag
-- Promotion Moment + Persistent Room Artifacts: enriched recap promotion banner with FROM→TO, animated pulse, artifact callout, perk preview; trophy shelf overlay on the room panel; tier-keyed Phaser artifacts drawn in the scene; starting perks (cash + reputation) based on highest tier ever reached
-- Sound Design: 13 synthesized Web Audio SFX (buy, sell, profit, loss, expiry ITM/OTM, day advance, shock, promotion, bankruptcy, boss reveal, tutorial); 🔊/🔇 mute toggle in the tape, persisted to save
-- Boss Weeks: themed Friday tests gate every promotion; boss reveal SFX on Monday; live progress bar in the trading column; recap shows passed/failed block with shortfall and penalty
-- Roguelite Meta / Run Journal: 8 lifetime stats tracked, last 8 runs logged, toggleable journal modal in the room panel
-- Charts + Fundamentals + Technicals: OHLC candlestick chart, fundamentals tab (P/E, market cap, growth, dividend, narrative, earnings flag), technicals tab (trend, momentum, RSI, support/resistance, MA, volume), every metric has a teaching tooltip; trading-style XP counters track fundamental vs technical trades
+- Onboarding First Week: 6-step coachmark tutorial with auto-advance and Skip button
+- Promotion Moment + Persistent Room Artifacts (trophy shelf, Phaser artifacts, starting perks)
+- Sound Design: 13 synthesized Web Audio SFX; 🔊/🔇 mute toggle persisted to save
+- Boss Weeks: themed Friday tests gate every promotion; live progress bar; recap shows passed/failed
+- Roguelite Meta / Run Journal: 10 lifetime stats, last 8 runs logged, toggleable journal modal
+- Charts + Fundamentals + Technicals + News: 20-bar candlestick chart with MA + S/R, 12-card fundamentals tab, 12-card technicals tab, generated news headlines per ticker, analyst rating pill, short interest, 52W range
+- Trading-style rewards: Balanced Trader reputation bonus, F/T splits in the Run Journal
+- Risk/Mood System: stress/confidence on RunState; affects premium quotes and HUD mood pill
+- Margin & Leverage: tier-keyed multiplier (1x→5x), buying power on trade ticket, daily interest, auto-paydown on share sale
+- Tutorial spotlight with proper SVG clip-path cutout — sharp inside, blurred outside, `keepSharp` array per step keeps multiple regions interactive
+- 100× contract multiplier on options — real-world cost math
+- Per-week market generation with continuity (last Friday close → new Monday open) + future-day shadows removed from the chart
+- Weekly recap deltas measure Monday-open → Friday-close, not Friday-morning → Friday-night
+- Procedural music engine per career tier (5 unique chord progressions / tempos / vibes) replacing the ambient hum
+- Run Journal modal rendered via portal so it sits above the trading terminal
+- Right-rail layout: Positions, Weekly Goals, and Career Upgrade card always visible at 100% zoom
+- Stop Losses + Limit Orders: resting orders sweep against day high/low each day-advance; inline form in the Trade Ticket; pending orders show in the right rail with cancel buttons
+- Room Upgrade Effects: Second Monitor unlocks a volume-bars panel under the candlestick chart; Better News Feed unlocks a Tuesday-night "Wednesday whisper" sector hint
+- Career Tier Unlocks: Limit orders unlock at Stock Broker, Stop Losses at Fund Manager. Stock Broker tier and above pay a $0.005-per-share commission. Margin daily interest scales down at Fund Manager (0.05%) and Hedge Fund Founder (0.02%).
+- **Client Portfolio**: promotions to Stock Broker spawn 2 clients with names, backstories, and risk tolerances. Each Friday their balance moves with your weekly performance × their beta, they pay you a weekly management fee deposited to cash, and they redeem if drawdown breaches their threshold or patience hits zero. Scales up at Fund Manager (4 clients, larger AUM) and Hedge Fund Founder (5 clients). Client roster shows in the right rail with balance, patience meter, and redemption hint.
+- **Content expansion**: 20 tickers (was 10), 35 event cards (was 21). Each ticker has a 4-beat recurring narrative arc that cycles seed-deterministically across weeks so a ticker has a memorable storyline.
+- **Settings Panel**: gear icon in the market tape opens a modal with SFX + music volume sliders, reduced-motion toggle, colorblind palette toggle, replay-tutorial action, and a reset-save destructive action. Settings persist in save.
 
 ## Backlog
 
-- Career Progression Rewards: unlock new instruments, clients, leverage, pressure as tiers change. (Trophies + perks landed; gameplay-affecting unlocks are next.)
-- Room Upgrade Effects: monitors, news feeds, terminals change mechanics, not just visuals.
-- Risk/Mood System: stress, confidence, reputation pressure that changes trader decisions.
-- Market Personality: deeper recurring identities — signature shocks, recurring lore arcs.
-- Rival Traders: named rivals on the leaderboard who react to your biggest wins and blowups.
-- Endgame Wall Street Floor: turn the final high-rise into a dense command center with institutional-scale trades.
-- Covered Calls: requires share-position constraint; defer until clients/AUM exist.
-- Margin & Leverage: late-tier teeth.
-- Keyboard Shortcuts: 1-5 for tickers, Space for Advance Day, B/S, C for close.
-- Ambient Audio: per-tier room loop layered under the SFX bed.
-- Settings Panel: audio volume slider, reduced-motion, color-blind palette.
-- Bundle splitting: Phaser dynamic-import + manualChunks before alpha ship.
+### Gameplay depth
+- **Covered Calls + naked short options**: requires share-position constraint. Sell calls against held shares for income; risk capped by stock ownership.
+- **Order book depth / bid-ask spread**: bid + ask instead of single mid-market price. Higher spread for low-quality / low-volume tickers. Affects slippage.
+- **Stop / limit on options too** (currently shares only).
+- **Intraday auto-execution at Hedge Fund Founder tier**: stops fire mid-day, not just on day-advance.
+
+### Pressure systems
+- **AUM + LP letters at Fund Manager tier**: bigger pool of capital is already there with 4 clients; need quarterly LP review modal with redemption mechanics.
+- **Daily loss limits at Prop Desk**: get fired if a single day drops more than $X.
+- **Insider trading / regulatory risk**: temptation system — trade on a tip for outsize gains, risk an SEC penalty.
+
+### Content depth
+- **More events**: cards themed by tier (e.g. Fed weeks more common at higher tiers).
+- **Market Personality**: deeper recurring lore arcs beyond the 4-beat per-ticker cycle.
+- **Rival Traders**: 2-3 named rivals on a leaderboard who react to your biggest wins and blowups.
+- **Bigger watchlist at Prop Desk+**: currently fixed at 8 tickers; could scale to 10–12 at higher tiers (now have 20 in the pool).
+
+### Polish + accessibility
+- **Keyboard Shortcuts**: 1-8 to select tickers, Space for Advance Day, B/S for buy/sell, C for close, M for mute, J for journal, Esc to dismiss modals.
+- **Bundle splitting**: Phaser dynamic-import + manualChunks. 1.7MB initial load is a deal-breaker for first impressions.
+- **Mobile / responsive polish**: the game is desktop-only at narrow widths.
+- **Endgame Wall Street Floor**: dense command-center Phaser scene at Hedge Fund Founder, institutional-scale trades.

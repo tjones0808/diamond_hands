@@ -179,5 +179,126 @@ export const eventDeck: GameEvent[] = [
     priceImpact: -0.07,
     volatilityImpact: 0.09,
     reputationImpact: 0
+  },
+  {
+    id: 'sovereign-downgrade',
+    title: 'Sovereign Downgrade',
+    description: 'A major rating agency cuts the federal outlook. Risk-off broadly.',
+    priceImpact: -0.06,
+    volatilityImpact: 0.14,
+    reputationImpact: 0
+  },
+  {
+    id: 'mega-merger',
+    title: 'Mega Merger Leak',
+    description: 'A bulge-bracket M&A rumor hits the tape pre-open.',
+    priceImpact: 0.14,
+    volatilityImpact: 0.16,
+    reputationImpact: 1
+  },
+  {
+    id: 'cyber-breach',
+    title: 'Industry Cyber Breach',
+    description: 'A coordinated breach hits multiple tech names. Sector under pressure.',
+    sector: 'TECH',
+    priceImpact: -0.11,
+    volatilityImpact: 0.17,
+    reputationImpact: -1
+  },
+  {
+    id: 'inflation-cool',
+    title: 'CPI Cools Down',
+    description: 'Inflation print comes in soft. Rate-sensitive names rally.',
+    priceImpact: 0.08,
+    volatilityImpact: 0.06,
+    reputationImpact: 0
+  },
+  {
+    id: 'commodity-spike',
+    title: 'Commodity Shock',
+    description: 'A geopolitical flashpoint sends oil + metals sharply higher.',
+    sector: 'ENERGY',
+    priceImpact: 0.12,
+    volatilityImpact: 0.15,
+    reputationImpact: 0
+  },
+  {
+    id: 'tax-policy',
+    title: 'Tax Policy Surprise',
+    description: 'Surprise corporate-tax bill leaks. Margins repriced across the board.',
+    priceImpact: -0.05,
+    volatilityImpact: 0.08,
+    reputationImpact: 0
+  },
+  {
+    id: 'fda-approval',
+    title: 'Surprise FDA Approval',
+    description: 'A second-line drug gets surprise approval; entire biotech tape ramps.',
+    sector: 'BIOTECH',
+    priceImpact: 0.18,
+    volatilityImpact: 0.16,
+    reputationImpact: 1
+  },
+  {
+    id: 'consumer-confidence',
+    title: 'Consumer Confidence Collapse',
+    description: 'University survey pegs consumer sentiment at a 12-month low.',
+    sector: 'CONSUMER',
+    priceImpact: -0.08,
+    volatilityImpact: 0.1,
+    reputationImpact: 0
+  },
+  {
+    id: 'gov-shutdown',
+    title: 'Government Shutdown Risk',
+    description: 'Continuing-resolution talks collapse. Defense and consumer wobble.',
+    priceImpact: -0.07,
+    volatilityImpact: 0.12,
+    reputationImpact: 0
+  },
+  {
+    id: 'tech-meltdown',
+    title: 'Hyperscaler Capex Cut',
+    description: 'A top hyperscaler cuts FY capex. Semis and infra names dump.',
+    sector: 'TECH',
+    priceImpact: -0.14,
+    volatilityImpact: 0.15,
+    reputationImpact: -1
+  },
+  {
+    id: 'green-subsidy',
+    title: 'Green Subsidy Expansion',
+    description: 'Renewable tax credits get expanded; clean-energy names rip.',
+    sector: 'ENERGY',
+    priceImpact: 0.16,
+    volatilityImpact: 0.12,
+    reputationImpact: 1
+  },
+  {
+    id: 'mortgage-spike',
+    title: 'Mortgage Rates Spike',
+    description: 'Long bonds sell off hard; mortgage rates jump 40bps in a day.',
+    sector: 'HOUSING',
+    priceImpact: -0.12,
+    volatilityImpact: 0.1,
+    reputationImpact: 0
+  },
+  {
+    id: 'defense-budget',
+    title: 'Defense Budget Surprise',
+    description: 'Committee marks defense spending higher than expected.',
+    sector: 'DEFENSE',
+    priceImpact: 0.1,
+    volatilityImpact: 0.08,
+    reputationImpact: 1
+  },
+  {
+    id: 'auto-recall',
+    title: 'Auto Recall Cascade',
+    description: 'A high-profile recall drags consumer durables and auto-adjacent names.',
+    sector: 'CONSUMER',
+    priceImpact: -0.09,
+    volatilityImpact: 0.11,
+    reputationImpact: 0
   }
 ];

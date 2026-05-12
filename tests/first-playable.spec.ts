@@ -125,13 +125,15 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
   await expect(page.locator('.market-column .watchlist')).toBeVisible();
   await expect(page.locator('.market-column .log')).toBeVisible();
   await expect(page.locator('.controls-column .terminal-header')).toBeVisible();
-  await expect(page.locator('.terminal > .positions')).toBeVisible();
+  await expect(page.locator('.right-rail .positions')).toBeVisible();
   await expect(page.locator('.candle-chart')).toBeVisible();
-  await page.getByRole('tab', { name: 'Fundamentals' }).click();
+  // Fundamentals is the default tab now; chart is always visible alongside.
   await expect(page.getByText('Signal Quality', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Technicals' }).click();
   await expect(page.getByText('Trend', { exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: 'Chart' }).click();
+  await page.getByRole('tab', { name: 'News' }).click();
+  await expect(page.locator('.news-pane li').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Fundamentals' }).click();
   await expect(page.getByRole('heading', { name: 'Trade Ticket' })).toBeVisible();
   await expect(page.getByText('Est. Share Cost')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Weekly Goals' })).toBeVisible();
@@ -148,11 +150,13 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
     const controlsColumn = document.querySelector('.controls-column')?.getBoundingClientRect();
     const tradeTicket = document.querySelector('.trade-ticket')?.getBoundingClientRect();
     const tradeGrid = document.querySelector('.trade-grid')?.getBoundingClientRect();
-    const progressColumn = document.querySelector('.progress-column')?.getBoundingClientRect();
+    const rightRail = document.querySelector('.right-rail')?.getBoundingClientRect();
     const watchlist = document.querySelector('.watchlist')?.getBoundingClientRect();
     const log = document.querySelector('.log')?.getBoundingClientRect();
     const positions = document.querySelector('.positions')?.getBoundingClientRect();
-    const layoutRects = ['.market-column', '.controls-column', '.positions']
+    const weeklyGoals = document.querySelector('.weekly-goals')?.getBoundingClientRect();
+    const upgradeCard = document.querySelector('.upgrade-card')?.getBoundingClientRect();
+    const layoutRects = ['.market-column', '.controls-column', '.right-rail']
       .map((selector) => ({ selector, rect: document.querySelector(selector)?.getBoundingClientRect() }))
       .filter((item): item is { selector: string; rect: DOMRect } => Boolean(item.rect));
     const overlaps: string[] = [];
@@ -200,10 +204,12 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
       controlsColumn,
       tradeTicket,
       tradeGrid,
-      progressColumn,
+      rightRail,
       watchlist,
       log,
       positions,
+      weeklyGoals,
+      upgradeCard,
       overlaps,
       overflows,
       internalOverflows,
@@ -221,17 +227,18 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
   expect(metrics.terminal?.width).toBeGreaterThan(1000);
   expect(metrics.terminal?.y).toBeGreaterThan((metrics.commandDeck?.y ?? 0) + (metrics.commandDeck?.height ?? 0));
   expect(metrics.marketColumn?.x).toBeLessThan(metrics.controlsColumn?.x ?? 0);
-  expect(metrics.controlsColumn?.x).toBeLessThan(metrics.positions?.x ?? 0);
-  expect(metrics.positions?.width ?? 0).toBeLessThan(metrics.marketColumn?.width ?? 0);
-  expect(metrics.positions?.width ?? 0).toBeLessThan(metrics.controlsColumn?.width ?? 0);
+  expect(metrics.controlsColumn?.x).toBeLessThan(metrics.rightRail?.x ?? 0);
+  // Right rail (positions + goals + upgrade) is narrower than the middle work area.
+  expect(metrics.rightRail?.width ?? 0).toBeLessThan(metrics.controlsColumn?.width ?? 0);
   expect(metrics.watchlist?.x).toBe(metrics.log?.x);
   expect(Math.abs((metrics.watchlist?.width ?? 0) - (metrics.log?.width ?? 0))).toBeLessThanOrEqual(2);
   expect(metrics.log?.y).toBeGreaterThan(metrics.watchlist?.bottom ?? 0);
   expect(Math.abs((metrics.log?.bottom ?? 0) - (metrics.marketColumn?.bottom ?? 0))).toBeLessThanOrEqual(2);
-  expect(metrics.positions?.height ?? 0).toBeGreaterThanOrEqual(metrics.controlsColumn?.height ?? 0);
-  expect(metrics.tradeGrid?.y).toBeLessThan(987);
-  expect(metrics.tradeGrid?.bottom ?? 0).toBeLessThanOrEqual((metrics.tradeTicket?.bottom ?? 0) + 1);
-  expect(metrics.progressColumn?.y ?? 0).toBeGreaterThanOrEqual((metrics.tradeGrid?.bottom ?? 0) + 1);
+  // Weekly Goals and Upgrade Card now sit in the right rail under positions, so they're
+  // visible regardless of the height the chart panel consumes.
+  expect(metrics.weeklyGoals?.y ?? 0).toBeGreaterThan(metrics.positions?.y ?? 0);
+  expect(metrics.upgradeCard?.y ?? 0).toBeGreaterThan(metrics.weeklyGoals?.y ?? 0);
+  expect(metrics.upgradeCard?.bottom ?? 0).toBeLessThanOrEqual((metrics.rightRail?.bottom ?? 0) + 1);
   expect(metrics.tickerRows.every((row) => row.height <= 32 && row.topSpread <= 3)).toBe(true);
   expect(metrics.log?.height ?? 0).toBeGreaterThan(250);
   expect(metrics.overlaps).toEqual([]);
@@ -247,24 +254,30 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
 });
 
 test.describe('stock detail panel', () => {
-  test('renders 5 candlesticks and switches between tabs', async ({ page }) => {
+  test('renders an extended candlestick chart with prior history and switches tabs', async ({ page }) => {
     await page.goto('/');
 
     const chart = page.locator('.candle-chart');
     await expect(chart).toBeVisible();
-    // Each candle gets a body rect + wick line + day label.
-    await expect(chart.locator('rect[rx="1.5"]')).toHaveCount(5);
+    // Monday: 15 prior-history candles + 1 current-week candle (no future "shadow").
+    await expect(chart.locator('rect[rx="1.2"]')).toHaveCount(16);
     await expect(chart.getByText('MON')).toBeVisible();
     await expect(chart.getByText('FRI')).toBeVisible();
+    // Moving-average line + support + resistance + this-week divider
+    await expect(chart.locator('polyline')).toBeVisible();
 
-    await page.getByRole('tab', { name: 'Fundamentals' }).click();
+    // Fundamentals is the default tab.
     await expect(page.getByText('P/E Ratio')).toBeVisible();
     await expect(page.getByText('Market Cap')).toBeVisible();
+    await expect(page.getByText('Short Interest')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Technicals' }).click();
     await expect(page.getByText('Trend', { exact: true })).toBeVisible();
-    await expect(page.getByText('Momentum')).toBeVisible();
     await expect(page.getByText('RSI')).toBeVisible();
+    await expect(page.getByText('52W Range')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'News' }).click();
+    await expect(page.locator('.news-pane li')).toHaveCount(3);
   });
 });
 

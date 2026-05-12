@@ -18,7 +18,17 @@ const baseRun: RunState = {
   weekLog: [],
   weekOptionResults: [],
   fundamentalScore: 0,
-  technicalScore: 0
+  technicalScore: 0,
+  weekFundamentalScore: 0,
+  weekTechnicalScore: 0,
+  stress: 0,
+  confidence: 0,
+  marginUsed: 0,
+  tickerSeries: {},
+  weekStartNetWorth: 6500,
+  weekStartCash: 6500,
+  restingOrders: [],
+  clients: []
 };
 
 describe('boss week eligibility', () => {

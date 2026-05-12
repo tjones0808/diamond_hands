@@ -91,6 +91,13 @@ export function WeekRecap({ run, dispatch }: { run: RunState; dispatch: (action:
           </section>
         ) : null}
 
+        {recap.balancedTrader ? (
+          <section className="recap-balanced" aria-label="Balanced Trader bonus">
+            <strong>BALANCED TRADER · +2 REPUTATION</strong>
+            <span>You took {recap.weekFundamentalTrades ?? 0} fundamental {plural(recap.weekFundamentalTrades ?? 0, 'trade')} and {recap.weekTechnicalTrades ?? 0} technical {plural(recap.weekTechnicalTrades ?? 0, 'play')}. Profitable too. The street notices.</span>
+          </section>
+        ) : null}
+
         {recap.promoted && recap.promotedToTier ? (
           <section className="recap-promotion" aria-label="Promotion">
             <div className="recap-promotion-banner">
@@ -134,6 +141,10 @@ function formatSigned(value: number) {
   const rounded = Math.round(value * 100) / 100;
   const sign = rounded >= 0 ? '+' : '-';
   return `${sign}$${Math.abs(rounded).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function plural(count: number, word: string) {
+  return count === 1 ? word : `${word}s`;
 }
 
 function strategyLabel(type: OptionStrategyType) {

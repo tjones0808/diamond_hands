@@ -18,7 +18,17 @@ const run: RunState = {
   weekLog: [],
   weekOptionResults: [],
   fundamentalScore: 0,
-  technicalScore: 0
+  technicalScore: 0,
+  weekFundamentalScore: 0,
+  weekTechnicalScore: 0,
+  stress: 0,
+  confidence: 0,
+  marginUsed: 0,
+  tickerSeries: {},
+  weekStartNetWorth: 5000,
+  weekStartCash: 5000,
+  restingOrders: [],
+  clients: []
 };
 
 describe('advanceDay', () => {

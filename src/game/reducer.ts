@@ -12,6 +12,7 @@ import {
 } from '../trading/tradingEngine';
 import { eventDeck } from '../content/events';
 import { createRng } from '../simulation/rng';
+import { generateNextMarketWeek } from '../market/marketGenerator';
 import { applyWeekOutcome, checkBankruptcy, evaluatePromotion } from '../career/careerEngine';
 import { getNetWorth } from './selectors';
 import { buildWeekResult } from '../week/weekRecap';
@@ -20,6 +21,11 @@ import { getStartingPerk, highestTier, tierArtifacts } from '../content/tierRewa
 import { playSfx } from '../audio/audioEngine';
 import { getBossDefinition, isBossEligible, resolveBossWeek } from '../career/bossWeek';
 import { appendRunSummary, applyWeekResultToStats, recordBankruptcy } from '../save/runJournal';
+import { applyMoodAfterWeek } from '../career/mood';
+import { accrueMarginInterest } from '../trading/margin';
+import { cancelRestingOrder, createRestingOrder, sweepRestingOrders } from '../trading/restingOrders';
+import type { RestingOrderType } from './types';
+import { attachClientsOnPromotion, settleClientsForWeek } from '../career/clientPortfolio';
 
 export function checkBossWeekStart(run: RunState): RunState {
   if (run.bossWeek) return run;
@@ -43,12 +49,16 @@ export type GameAction =
   | { type: 'BUY_PUT'; symbol: string; strike: number; quantity: number; premium: number; expiresDay?: OptionExpiryDay }
   | { type: 'OPEN_STRATEGY'; input: OpenMultiLegInput }
   | { type: 'CLOSE_OPTIONS'; symbol: string; currentPrice: number; volatility: number }
+  | { type: 'CREATE_RESTING_ORDER'; orderType: RestingOrderType; symbol: string; quantity: number; triggerPrice: number }
+  | { type: 'CANCEL_RESTING_ORDER'; orderId: string }
   | { type: 'ADVANCE_DAY' }
   | { type: 'DISMISS_RECAP' }
   | { type: 'COMPLETE_TUTORIAL' }
   | { type: 'TOGGLE_AUDIO_MUTE' }
   | { type: 'UNLOCK_SECOND_MONITOR' }
-  | { type: 'UNLOCK_BETTER_NEWS_FEED' };
+  | { type: 'UNLOCK_BETTER_NEWS_FEED' }
+  | { type: 'UPDATE_SETTINGS'; settings: Partial<import('./types').SettingsState> }
+  | { type: 'RESET_TUTORIAL' };
 
 const expiryDays: OptionExpiryDay[] = ['TUE', 'THU', 'FRI'];
 
@@ -82,6 +92,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'CLOSE_OPTIONS':
       playSfx('sell');
       return { ...state, run: checkBankruptcy(closeOptionsForSymbol(state.run, action.symbol, action.currentPrice, action.volatility)) };
+    case 'CREATE_RESTING_ORDER':
+      playSfx('click');
+      return { ...state, run: createRestingOrder(state.run, action.orderType, action.symbol, action.quantity, action.triggerPrice) };
+    case 'CANCEL_RESTING_ORDER':
+      return { ...state, run: cancelRestingOrder(state.run, action.orderId) };
     case 'DISMISS_RECAP':
       if (!state.run.weekResult) return state;
       return { ...state, run: { ...state.run, weekResult: undefined } };
@@ -90,6 +105,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, save: { ...state.save, hasCompletedTutorial: true } };
     case 'TOGGLE_AUDIO_MUTE':
       return { ...state, save: { ...state.save, audioMuted: !state.save.audioMuted } };
+    case 'UPDATE_SETTINGS':
+      return { ...state, save: { ...state.save, settings: { ...state.save.settings, ...action.settings } } };
+    case 'RESET_TUTORIAL':
+      return { ...state, save: { ...state.save, hasCompletedTutorial: false } };
     case 'UNLOCK_SECOND_MONITOR':
       if (state.save.unlocks.secondMonitor || state.run.cash < 750) return state;
       return {
@@ -123,34 +142,41 @@ function advanceRunDay(state: GameState): GameState {
   const currentDay = state.run.day;
 
   if (currentDay === 'TUE') {
-    const settled = settleIfExpiringToday(state.run, currentDay);
+    const swept = sweepRestingOrders(state.run, currentDay);
+    const settled = settleIfExpiringToday(swept, currentDay);
     playExpirySfx(state.run, settled);
     playSfx('dayAdvance');
-    const afterShock = applyWednesdayShock(advanceDay(settled));
+    const afterShock = applyWednesdayShock(advanceDay(accrueMarginInterest(settled)));
     if (afterShock.activeEvent) playSfx('shock');
     return { ...state, run: afterShock };
   }
 
   if (currentDay === 'THU') {
-    const settled = settleIfExpiringToday(state.run, currentDay);
+    const swept = sweepRestingOrders(state.run, currentDay);
+    const settled = settleIfExpiringToday(swept, currentDay);
     playExpirySfx(state.run, settled);
     playSfx('dayAdvance');
-    return { ...state, run: advanceDay(settled) };
+    return { ...state, run: advanceDay(accrueMarginInterest(settled)) };
   }
 
   if (currentDay !== 'FRI') {
+    const swept = sweepRestingOrders(state.run, currentDay);
     playSfx('dayAdvance');
-    return { ...state, run: advanceDay(state.run) };
+    return { ...state, run: advanceDay(accrueMarginInterest(swept)) };
   }
 
-  const beforeNetWorth = getNetWorth(state.run);
-  const beforeCash = state.run.cash;
+  // True weekly baseline = Monday's open snapshot, NOT Friday morning. The player may have
+  // bought shares Monday and sold them Thursday at a profit; that change is already baked into
+  // Friday's cash/net-worth, so a Friday-morning-vs-Friday-night delta would show $0.
+  const weekStartNetWorth = state.run.weekStartNetWorth;
+  const weekStartCash = state.run.weekStartCash;
   const beforeReputation = state.run.reputation;
   const beforeXp = state.run.xp;
   const activeEvent = state.run.activeEvent;
-  let settled = settleIfExpiringToday(state.run, 'FRI');
+  const sweptFri = sweepRestingOrders(state.run, 'FRI');
+  let settled = settleIfExpiringToday(accrueMarginInterest(sweptFri), 'FRI');
   let afterNetWorth = getNetWorth(settled);
-  const outcome = applyWeekOutcome({ cashDelta: afterNetWorth - beforeNetWorth, reputation: settled.reputation, xp: settled.xp });
+  const outcome = applyWeekOutcome({ cashDelta: afterNetWorth - weekStartNetWorth, reputation: settled.reputation, xp: settled.xp });
 
   // Boss week resolution gates promotion. Without an active boss week, the player keeps progress
   // but cannot promote — they must trigger a boss week next eligibility Monday.
@@ -165,7 +191,12 @@ function advanceRunDay(state: GameState): GameState {
     }
   }
 
-  const reputationAfterBoss = Math.max(0, Math.min(100, outcome.reputation + bossReputationDelta));
+  // Balanced Trader bonus: both styles ticked up AND the week was profitable.
+  const balancedTrader = state.run.weekFundamentalScore > 0
+    && state.run.weekTechnicalScore > 0
+    && (afterNetWorth - weekStartNetWorth) > 0;
+  const balancedTraderRepDelta = balancedTrader ? 2 : 0;
+  const reputationAfterBoss = Math.max(0, Math.min(100, outcome.reputation + bossReputationDelta + balancedTraderRepDelta));
   const promotion = state.run.bossWeek && bossResolution?.passed
     ? evaluatePromotion({
         tier: settled.tier,
@@ -181,9 +212,9 @@ function advanceRunDay(state: GameState): GameState {
   const nextRunPerk = promotion.promoted ? getStartingPerk(nextHighest) : undefined;
   const weekResult = buildWeekResult({
     week: state.run.week,
-    startNetWorth: beforeNetWorth,
+    startNetWorth: weekStartNetWorth,
     endNetWorth: afterNetWorth,
-    startCash: beforeCash,
+    startCash: weekStartCash,
     endCash: settled.cash,
     optionResults: settled.weekOptionResults,
     event: activeEvent,
@@ -195,7 +226,10 @@ function advanceRunDay(state: GameState): GameState {
     newArtifact,
     nextRunPerk,
     bossResolution,
-    bossDefinition: state.run.bossWeek?.definition
+    bossDefinition: state.run.bossWeek?.definition,
+    balancedTrader,
+    weekFundamentalTrades: state.run.weekFundamentalScore,
+    weekTechnicalTrades: state.run.weekTechnicalScore
   });
   const bossLogs = bossResolution
     ? [
@@ -206,23 +240,72 @@ function advanceRunDay(state: GameState): GameState {
       ]
     : [];
 
+  // Settle client portfolio if any are present.
+  const weeklyPerfPct = weekStartNetWorth > 0 ? (afterNetWorth - weekStartNetWorth) / weekStartNetWorth : 0;
+  const clientResult = settleClientsForWeek(settled.clients, weeklyPerfPct);
+  let settledWithClients = settled;
+  const clientLogs: string[] = [];
+  if (settled.clients.length > 0) {
+    settledWithClients = {
+      ...settled,
+      clients: clientResult.clients,
+      cash: Math.round((settled.cash + clientResult.totalFeeIncome) * 100) / 100,
+      reputation: Math.max(0, Math.min(100, settled.reputation - clientResult.departed.length * 4))
+    };
+    if (clientResult.totalFeeIncome > 0) {
+      clientLogs.push(`Client management fees collected: +$${clientResult.totalFeeIncome.toFixed(2)}.`);
+    }
+    for (const departed of clientResult.departed) {
+      clientLogs.push(`${departed.name} redeemed their account. Reputation -4.`);
+    }
+  }
+  // Recompute after-net-worth post fees so it reflects cash collected.
+  afterNetWorth = getNetWorth(settledWithClients);
+  const settledForMood = applyMoodAfterWeek(settledWithClients, afterNetWorth - weekStartNetWorth, bossResolution?.passed);
   const advanced = advanceDay({
-    ...settled,
+    ...settledForMood,
     tier: promotion.tier,
     reputation: reputationAfterBoss,
     xp: outcome.xp,
     activeEvent: undefined,
     bossWeek: undefined,
     weekLog: [
-      ...settled.weekLog,
-      `Friday expiry closed. Net worth moved ${formatSigned(afterNetWorth - beforeNetWorth)}.`,
+      ...settledWithClients.weekLog,
+      `Friday expiry closed. Net worth moved ${formatSigned(afterNetWorth - weekStartNetWorth)}.`,
       outcome.reputation > settled.reputation ? 'Your reputation ticks up after a profitable week.' : 'You log the lesson and prepare for Monday.',
+      ...clientLogs,
       ...bossLogs,
       ...(promotion.promoted ? [`Promotion unlocked: ${promotion.tier.replaceAll('_', ' ')}.`] : [])
     ]
   });
 
-  const mondayRun = maybeStartBossWeek(advanced);
+  // Generate the new week's market continuing from each ticker's Friday close.
+  const nextMarket = generateNextMarketWeek(state.run.seed, advanced.week, {
+    tickers: advanced.tickers,
+    tickerSeries: advanced.tickerSeries
+  });
+  const withNewMarket: typeof advanced = {
+    ...advanced,
+    marketRegime: nextMarket.regime,
+    tickers: nextMarket.tickers,
+    tickerSeries: nextMarket.tickerSeries
+  };
+
+  // Snapshot Monday-open baselines and clear any resting orders left over from last week.
+  let newWeekRun: typeof withNewMarket = {
+    ...withNewMarket,
+    weekStartCash: withNewMarket.cash,
+    weekStartNetWorth: getNetWorth(withNewMarket),
+    restingOrders: []
+  };
+
+  // Promotion to a tier with clients triggers a new roster generation.
+  if (promotion.promoted) {
+    const clientRng = createRng(state.run.seed + advanced.week * 53 + 7);
+    newWeekRun = attachClientsOnPromotion(newWeekRun, promotion.tier, clientRng);
+  }
+
+  const mondayRun = maybeStartBossWeek(newWeekRun);
 
   const updatedTiersReached = promotion.promoted && !state.save.tiersEverReached.includes(newTier)
     ? [...state.save.tiersEverReached, newTier]
@@ -232,12 +315,18 @@ function advanceRunDay(state: GameState): GameState {
   playExpirySfx(state.run, settled);
   if (promotion.promoted) {
     playSfx('promotion');
-  } else if (afterNetWorth - beforeNetWorth > 0) {
+  } else if (afterNetWorth - weekStartNetWorth > 0) {
     playSfx('profit');
-  } else if (afterNetWorth - beforeNetWorth < -100) {
+  } else if (afterNetWorth - weekStartNetWorth < -100) {
     playSfx('loss');
   }
-  const nextRun = checkBankruptcy({ ...mondayRun, weekResult, weekOptionResults: [] });
+  const nextRun = checkBankruptcy({
+    ...mondayRun,
+    weekResult,
+    weekOptionResults: [],
+    weekFundamentalScore: 0,
+    weekTechnicalScore: 0
+  });
   if (nextRun.isBankrupt && !state.run.isBankrupt) playSfx('bankruptcy');
   if (nextRun.bossWeek) playSfx('bossReveal');
 
@@ -284,14 +373,22 @@ function maybeStartBossWeek(run: RunState): RunState {
 function tagFundamentalTrade(after: RunState, before: RunState): RunState {
   // A new share trade only counts as fundamental if it actually executed (cash decreased).
   if (after.cash >= before.cash) return after;
-  return { ...after, fundamentalScore: after.fundamentalScore + 1 };
+  return {
+    ...after,
+    fundamentalScore: after.fundamentalScore + 1,
+    weekFundamentalScore: after.weekFundamentalScore + 1
+  };
 }
 
 function tagTechnicalTrade(after: RunState, before: RunState, expiresDay: OptionExpiryDay): RunState {
   if (after.cash >= before.cash) return after;
   // Short-DTE option opens read as technical plays; FRI counts less.
   const score = expiresDay === 'FRI' ? 1 : 2;
-  return { ...after, technicalScore: after.technicalScore + score };
+  return {
+    ...after,
+    technicalScore: after.technicalScore + score,
+    weekTechnicalScore: after.weekTechnicalScore + score
+  };
 }
 
 function playExpirySfx(before: RunState, after: RunState) {

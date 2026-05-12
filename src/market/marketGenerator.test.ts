@@ -32,4 +32,26 @@ describe('generateMarketWeek', () => {
       }
     }
   });
+
+  it('attaches 15 bars of prior history that lead into the current Monday open', () => {
+    const week = generateMarketWeek(2026);
+
+    for (const ticker of week.tickers) {
+      expect(ticker.priorHistory).toHaveLength(15);
+      const lastHistorical = ticker.priorHistory.at(-1);
+      const firstCurrent = ticker.prices[0];
+      expect(lastHistorical?.close).toBeCloseTo(firstCurrent.open, 1);
+    }
+  });
+
+  it('builds a snapshot with analyst rating, short interest, 52w range, and 3 headlines', () => {
+    const week = generateMarketWeek(2026);
+
+    for (const ticker of week.tickers) {
+      expect(['STRONG_BUY', 'BUY', 'HOLD', 'SELL', 'STRONG_SELL']).toContain(ticker.snapshot.analystRating);
+      expect(ticker.snapshot.shortInterestPct).toBeGreaterThan(0);
+      expect(ticker.snapshot.fiftyTwoWeekHigh).toBeGreaterThanOrEqual(ticker.snapshot.fiftyTwoWeekLow);
+      expect(ticker.snapshot.recentHeadlines).toHaveLength(3);
+    }
+  });
 });
