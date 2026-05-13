@@ -36,6 +36,7 @@ export function createInitialGameState(seed = Date.now(), save = createInitialSa
   const perk = getStartingPerk(save.highestTier);
 
   const state: GameState = {
+    effects: [],
     save,
     run: {
       seed,

@@ -1,4 +1,4 @@
-import type { GameState, OptionExpiryDay, RunState, WeekDay } from './types';
+import type { GameEffect, GameState, OptionExpiryDay, RunState, WeekDay } from './types';
 // OptionExpiryDay is also used by tagTechnicalTrade helper below.
 import { advanceDay } from '../week/weekEngine';
 import {
@@ -19,20 +19,18 @@ import { getNetWorth } from './selectors';
 import { buildWeekResult } from '../week/weekRecap';
 import type { OpenMultiLegInput } from '../trading/tradingEngine';
 import { getStartingPerk, highestTier, tierArtifacts } from '../content/tierRewards';
-import { playSfx } from '../audio/audioEngine';
 import { getBossDefinition, isBossEligible, resolveBossWeek } from '../career/bossWeek';
 import { appendRunSummary, applyWeekResultToStats, recordBankruptcy } from '../save/runJournal';
 import { checkAchievements, insertIntoHallOfFame } from '../save/achievements';
 import { applyMoodAfterWeek } from '../career/mood';
 import { accrueMarginInterest } from '../trading/margin';
-import { cancelRestingOrder, createRestingOrder, sweepRestingOrders } from '../trading/restingOrders';
+import { cancelRestingOrder, createRestingOrder, sweepRestingOrdersWithEffects } from '../trading/restingOrders';
 import type { RestingOrderType } from './types';
 import { attachClientsOnPromotion, settleClientsForWeek } from '../career/clientPortfolio';
 import { captureDayStartNetWorth, checkDailyLossLimit } from '../career/dailyLossLimit';
 import { tickRivalsForWeek } from '../career/rivals';
 import { maybeOfferTip, rollSecInvestigation } from '../career/insiderTips';
 import { buildLpReview, shouldFireLpReview } from '../career/lpReview';
-import { pushToast } from '../ui/toasts';
 
 export function checkBossWeekStart(run: RunState): RunState {
   if (run.bossWeek) return run;
@@ -70,52 +68,56 @@ export type GameAction =
   | { type: 'ACCEPT_INSIDER_TIP' }
   | { type: 'DECLINE_INSIDER_TIP' }
   | { type: 'DISMISS_SEC_INVESTIGATION' }
-  | { type: 'ACKNOWLEDGE_LP_REVIEW' };
+  | { type: 'ACKNOWLEDGE_LP_REVIEW' }
+  | { type: 'CLEAR_EFFECTS' };
 
 const expiryDays: OptionExpiryDay[] = ['TUE', 'THU', 'FRI'];
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'BUY_SHARES': {
-      playSfx('buy');
       const run = buyShares(state.run, action.symbol, action.quantity, action.price);
-      return { ...state, run: checkBankruptcy(tagFundamentalTrade(run, state.run)) };
+      return withEffects({ ...state, run: checkBankruptcy(tagFundamentalTrade(run, state.run)) }, sfx('buy'));
     }
     case 'SELL_SHARES':
-      playSfx('sell');
-      return { ...state, run: checkBankruptcy(sellShares(state.run, action.symbol, action.quantity, action.price)) };
+      return withEffects(
+        { ...state, run: checkBankruptcy(sellShares(state.run, action.symbol, action.quantity, action.price)) },
+        sfx('sell')
+      );
     case 'BUY_CALL': {
-      playSfx('buy');
       const expiry = action.expiresDay ?? 'FRI';
       const run = buyCall(state.run, action.symbol, action.strike, action.quantity, action.premium, expiry);
-      return { ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, expiry)) };
+      return withEffects({ ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, expiry)) }, sfx('buy'));
     }
     case 'BUY_PUT': {
-      playSfx('buy');
       const expiry = action.expiresDay ?? 'FRI';
       const run = buyPut(state.run, action.symbol, action.strike, action.quantity, action.premium, expiry);
-      return { ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, expiry)) };
+      return withEffects({ ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, expiry)) }, sfx('buy'));
     }
     case 'OPEN_STRATEGY': {
-      playSfx('buy');
       const run = openMultiLegOptions(state.run, action.input);
-      return { ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, action.input.expiresDay)) };
+      return withEffects({ ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, action.input.expiresDay)) }, sfx('buy'));
     }
     case 'OPEN_COVERED_CALL': {
-      playSfx('sell');
       const expiry = action.expiresDay ?? 'FRI';
       const run = openCoveredCall(state.run, action.symbol, action.strike, action.quantity, action.premium, expiry);
       // Premium collected counts as fundamental income, not technical churn.
-      return { ...state, run: checkBankruptcy(tagFundamentalTrade(run, state.run)) };
+      return withEffects({ ...state, run: checkBankruptcy(tagFundamentalTrade(run, state.run)) }, sfx('sell'));
     }
     case 'CLOSE_OPTIONS':
-      playSfx('sell');
-      return { ...state, run: checkBankruptcy(closeOptionsForSymbol(state.run, action.symbol, action.currentPrice, action.volatility)) };
+      return withEffects(
+        { ...state, run: checkBankruptcy(closeOptionsForSymbol(state.run, action.symbol, action.currentPrice, action.volatility)) },
+        sfx('sell')
+      );
     case 'CREATE_RESTING_ORDER':
-      playSfx('click');
-      return { ...state, run: createRestingOrder(state.run, action.orderType, action.symbol, action.quantity, action.triggerPrice) };
+      return withEffects(
+        { ...state, run: createRestingOrder(state.run, action.orderType, action.symbol, action.quantity, action.triggerPrice) },
+        sfx('click')
+      );
     case 'CANCEL_RESTING_ORDER':
       return { ...state, run: cancelRestingOrder(state.run, action.orderId) };
+    case 'CLEAR_EFFECTS':
+      return state.effects.length === 0 ? state : { ...state, effects: [] };
     case 'DISMISS_RECAP': {
       if (!state.run.weekResult) return state;
       const cleared: RunState = { ...state.run, weekResult: undefined };
@@ -214,35 +216,46 @@ function advanceRunDay(state: GameState): GameState {
   if (state.run.isBankrupt) return state;
 
   const currentDay = state.run.day;
+  const effects: GameEffect[] = [];
 
   if (currentDay === 'TUE') {
-    const swept = sweepRestingOrders(state.run, currentDay);
+    const sweep = sweepRestingOrdersWithEffects(state.run, currentDay);
+    effects.push(...sweep.effects);
+    const swept = sweep.run;
     const settled = settleIfExpiringToday(swept, currentDay);
     const lossCheck = checkDailyLossLimit(settled);
-    if (lossCheck.fired) return { ...state, run: lossCheck.run };
-    playExpirySfx(state.run, settled);
-    playSfx('dayAdvance');
+    if (lossCheck.fired) return withEffects({ ...state, run: lossCheck.run }, ...effects);
+    effects.push(...expirySfx(state.run, settled), sfx('dayAdvance'));
     const afterShock = applyWednesdayShock(advanceDay(accrueMarginInterest(lossCheck.run)));
-    if (afterShock.activeEvent) playSfx('shock');
-    return { ...state, run: captureDayStartNetWorth(afterShock) };
+    if (afterShock.activeEvent) effects.push(sfx('shock'));
+    return withEffects({ ...state, run: captureDayStartNetWorth(afterShock) }, ...effects);
   }
 
   if (currentDay === 'THU') {
-    const swept = sweepRestingOrders(state.run, currentDay);
+    const sweep = sweepRestingOrdersWithEffects(state.run, currentDay);
+    effects.push(...sweep.effects);
+    const swept = sweep.run;
     const settled = settleIfExpiringToday(swept, currentDay);
     const lossCheck = checkDailyLossLimit(settled);
-    if (lossCheck.fired) return { ...state, run: lossCheck.run };
-    playExpirySfx(state.run, settled);
-    playSfx('dayAdvance');
-    return { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) };
+    if (lossCheck.fired) return withEffects({ ...state, run: lossCheck.run }, ...effects);
+    effects.push(...expirySfx(state.run, settled), sfx('dayAdvance'));
+    return withEffects(
+      { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) },
+      ...effects
+    );
   }
 
   if (currentDay !== 'FRI') {
-    const swept = sweepRestingOrders(state.run, currentDay);
+    const sweep = sweepRestingOrdersWithEffects(state.run, currentDay);
+    effects.push(...sweep.effects);
+    const swept = sweep.run;
     const lossCheck = checkDailyLossLimit(swept);
-    if (lossCheck.fired) return { ...state, run: lossCheck.run };
-    playSfx('dayAdvance');
-    return { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) };
+    if (lossCheck.fired) return withEffects({ ...state, run: lossCheck.run }, ...effects);
+    effects.push(sfx('dayAdvance'));
+    return withEffects(
+      { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) },
+      ...effects
+    );
   }
 
   // True weekly baseline = Monday's open snapshot, NOT Friday morning. The player may have
@@ -253,9 +266,11 @@ function advanceRunDay(state: GameState): GameState {
   const beforeReputation = state.run.reputation;
   const beforeXp = state.run.xp;
   const activeEvent = state.run.activeEvent;
-  const sweptFri = sweepRestingOrders(state.run, 'FRI');
+  const sweepFri = sweepRestingOrdersWithEffects(state.run, 'FRI');
+  effects.push(...sweepFri.effects);
+  const sweptFri = sweepFri.run;
   const fridayLossCheck = checkDailyLossLimit(sweptFri);
-  if (fridayLossCheck.fired) return { ...state, run: fridayLossCheck.run };
+  if (fridayLossCheck.fired) return withEffects({ ...state, run: fridayLossCheck.run }, ...effects);
 
   // SEC roll for accepted insider tips. Happens before settlement so the fine hits cash now.
   let postSec = fridayLossCheck.run;
@@ -432,13 +447,13 @@ function advanceRunDay(state: GameState): GameState {
     : state.save.tiersEverReached;
 
   // Friday settle sound effects
-  playExpirySfx(state.run, settled);
+  effects.push(...expirySfx(state.run, settled));
   if (promotion.promoted) {
-    playSfx('promotion');
+    effects.push(sfx('promotion'));
   } else if (afterNetWorth - weekStartNetWorth > 0) {
-    playSfx('profit');
+    effects.push(sfx('profit'));
   } else if (afterNetWorth - weekStartNetWorth < -100) {
-    playSfx('loss');
+    effects.push(sfx('loss'));
   }
   const nextRun = checkBankruptcy({
     ...mondayRun,
@@ -448,27 +463,25 @@ function advanceRunDay(state: GameState): GameState {
     weekTechnicalScore: 0
   });
   if (nextRun.isBankrupt && !state.run.isBankrupt) {
-    playSfx('bankruptcy');
-    pushToast('Bankruptcy: the run ends here.', 'danger', 6000);
+    effects.push(sfx('bankruptcy'), toast('Bankruptcy: the run ends here.', 'danger', 6000));
   }
   if (nextRun.bossWeek) {
-    playSfx('bossReveal');
-    pushToast(`Boss week incoming: ${nextRun.bossWeek.definition.title}`, 'warn', 5000);
+    effects.push(sfx('bossReveal'), toast(`Boss week incoming: ${nextRun.bossWeek.definition.title}`, 'warn', 5000));
   }
   if (promotion.promoted) {
-    pushToast(`Promoted to ${promotion.tier.replaceAll('_', ' ')}!`, 'success', 6000);
+    effects.push(toast(`Promoted to ${promotion.tier.replaceAll('_', ' ')}!`, 'success', 6000));
   }
   if (balancedTrader) {
-    pushToast('Balanced Trader bonus: +2 reputation.', 'success');
+    effects.push(toast('Balanced Trader bonus: +2 reputation.', 'success'));
   }
   if (clientResult.departed.length > 0) {
-    pushToast(`${clientResult.departed.length} client${clientResult.departed.length === 1 ? '' : 's'} redeemed.`, 'warn');
+    effects.push(toast(`${clientResult.departed.length} client${clientResult.departed.length === 1 ? '' : 's'} redeemed.`, 'warn'));
   }
   if (secInvestigation) {
-    pushToast('SEC investigation opened. Check the notice.', 'danger', 6000);
+    effects.push(toast('SEC investigation opened. Check the notice.', 'danger', 6000));
   }
   if (nextRun.pendingLpReview) {
-    pushToast('LP quarterly review on the calendar.', 'info');
+    effects.push(toast('LP quarterly review on the calendar.', 'info'));
   }
 
   let nextStats = applyWeekResultToStats(state.save.stats, weekResult);
@@ -503,11 +516,11 @@ function advanceRunDay(state: GameState): GameState {
     nextSave = { ...nextSave, achievements: [...nextSave.achievements, ...newUnlocks] };
   }
 
-  return {
+  return withEffects({
     ...state,
     run: nextRun,
     save: nextSave
-  };
+  }, ...effects);
 }
 
 function maybeStartBossWeek(run: RunState): RunState {
@@ -547,11 +560,28 @@ function tagTechnicalTrade(after: RunState, before: RunState, expiresDay: Option
   };
 }
 
-function playExpirySfx(before: RunState, after: RunState) {
+function withEffects(state: GameState, ...effects: GameEffect[]): GameState {
+  if (effects.length === 0) return state;
+  return { ...state, effects: [...state.effects, ...effects] };
+}
+
+function sfx(id: Extract<GameEffect, { type: 'SFX' }>['id']): GameEffect {
+  return { type: 'SFX', id };
+}
+
+function toast(
+  message: string,
+  tone?: Extract<GameEffect, { type: 'TOAST' }>['tone'],
+  ttlMs?: number
+): GameEffect {
+  return { type: 'TOAST', message, tone, ttlMs };
+}
+
+function expirySfx(before: RunState, after: RunState): GameEffect[] {
   const newResults = after.weekOptionResults.slice(before.weekOptionResults.length);
-  if (newResults.length === 0) return;
+  if (newResults.length === 0) return [];
   const itm = newResults.some((result) => result.expiredInTheMoney);
-  playSfx(itm ? 'expiryItm' : 'expiryOtm');
+  return [sfx(itm ? 'expiryItm' : 'expiryOtm')];
 }
 
 function settleIfExpiringToday(run: RunState, day: WeekDay): RunState {

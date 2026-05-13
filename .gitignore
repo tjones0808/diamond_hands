@@ -29,6 +29,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local agent/dev output
+.claude/
+.dev-server/*.log
+playwright-report/
+
 # local env files
 .env*.local
 .env
