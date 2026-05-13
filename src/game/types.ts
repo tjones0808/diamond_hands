@@ -353,7 +353,12 @@ export interface RunSummary {
   endedAt: string;
 }
 
+export type GameEffect =
+  | { type: 'SFX'; id: import('../audio/audioEngine').SfxId }
+  | { type: 'TOAST'; message: string; tone?: import('../ui/toasts').ToastTone; ttlMs?: number };
+
 export interface GameState {
   run: RunState;
   save: SaveState;
+  effects: GameEffect[];
 }

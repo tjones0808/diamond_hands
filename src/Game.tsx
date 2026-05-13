@@ -21,6 +21,7 @@ import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts';
 import { ShortcutHelp } from './ui/ShortcutHelp';
 import { ToastStack } from './ui/ToastStack';
 import type { SaveState } from './game/types';
+import { flushGameEffects } from './game/effects';
 
 export interface GameProps {
   seed: number;
@@ -40,6 +41,12 @@ export function Game({ seed, initialSave, onQuitToTitle }: GameProps) {
   useEffect(() => {
     storeSave(state.save);
   }, [state.save]);
+
+  useEffect(() => {
+    if (state.effects.length === 0) return;
+    flushGameEffects(state.effects);
+    dispatch({ type: 'CLEAR_EFFECTS' });
+  }, [state.effects]);
 
   useEffect(() => {
     setSfxMuted(state.save.audioMuted);

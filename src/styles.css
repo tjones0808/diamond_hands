@@ -3591,6 +3591,174 @@ button:focus-visible {
   }
 
   .terminal {
+    grid-template-columns: minmax(250px, 0.8fr) minmax(520px, 1.55fr) minmax(220px, 0.62fr);
+    overflow: hidden;
+  }
+
+  .terminal .controls-column {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .terminal-header {
+    min-height: 54px;
+    padding: 8px 10px;
+  }
+
+  .whisper-card {
+    padding: 6px 8px;
+  }
+
+  .stock-detail-panel {
+    padding: 5px 7px;
+    gap: 3px;
+  }
+
+  .stock-chart-pane,
+  .stock-chart-pane .candle-chart {
+    min-height: 116px;
+  }
+
+  .trade-ticket {
+    padding: 4px 7px;
+    gap: 3px;
+  }
+
+  .ticket-header {
+    gap: 6px;
+  }
+
+  .strategy-inline,
+  .dte-option,
+  .ticket-inputs input {
+    height: 22px;
+  }
+
+  .dte-option {
+    min-width: 29px;
+    padding: 0 5px;
+  }
+
+  .ticket-inputs label {
+    gap: 1px;
+    font-size: 9px;
+  }
+
+  .ticket-inputs input {
+    width: 48px;
+  }
+
+  .ticket-metrics {
+    gap: 3px;
+  }
+
+  .ticket-metrics span {
+    padding: 2px 4px;
+    font-size: 8px;
+  }
+
+  .ticket-metrics b {
+    font-size: 9px;
+  }
+
+  .trade-ticket .trade-grid {
+    gap: 4px;
+  }
+
+  .trade-ticket .trade-grid button {
+    min-height: 24px;
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+
+  .resting-orders-form {
+    gap: 4px;
+    padding-top: 3px;
+  }
+
+  .resting-orders-form label {
+    gap: 1px;
+    font-size: 8px;
+  }
+
+  .resting-orders-form select,
+  .resting-orders-form input,
+  .resting-submit {
+    height: 21px;
+    min-height: 21px;
+    font-size: 9px;
+  }
+}
+
+@media (max-height: 800px) and (min-width: 1281px) {
+  .terminal-header {
+    min-height: 54px;
+    padding: 8px 10px;
+  }
+
+  .whisper-card {
+    padding: 6px 8px;
+  }
+
+  .stock-detail-panel {
+    padding: 5px 7px;
+    gap: 3px;
+  }
+
+  .stock-chart-pane,
+  .stock-chart-pane .candle-chart {
+    min-height: 136px;
+  }
+
+  .trade-ticket {
+    padding: 5px 9px;
+    gap: 4px;
+  }
+
+  .ticket-metrics {
+    gap: 4px;
+  }
+
+  .ticket-metrics span {
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .ticket-metrics b {
+    font-size: 10px;
+  }
+
+  .trade-ticket .trade-grid {
+    gap: 5px;
+  }
+
+  .trade-ticket .trade-grid button {
+    min-height: 28px;
+    padding: 4px 5px;
+    font-size: 10px;
+  }
+
+  .resting-orders-form {
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  .resting-orders-form label {
+    gap: 1px;
+    font-size: 9px;
+  }
+
+  .resting-orders-form select,
+  .resting-orders-form input,
+  .resting-submit {
+    height: 23px;
+    min-height: 23px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .terminal {
     align-content: start;
     grid-template-columns: minmax(300px, 0.86fr) minmax(0, 1.14fr);
     overflow: auto;

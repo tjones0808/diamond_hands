@@ -1,14 +1,35 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BossWeekDefinition, GameState } from './types';
 import { createInitialGameState, createInitialSave } from './createInitialState';
 import { gameReducer } from './reducer';
 import { getBossDefinition } from '../career/bossWeek';
+
+const effectMocks = vi.hoisted(() => ({
+  playSfx: vi.fn(),
+  pushToast: vi.fn()
+}));
+
+vi.mock('../audio/audioEngine', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../audio/audioEngine')>(),
+  playSfx: effectMocks.playSfx
+}));
+
+vi.mock('../ui/toasts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../ui/toasts')>(),
+  pushToast: effectMocks.pushToast
+}));
+
+beforeEach(() => {
+  effectMocks.playSfx.mockClear();
+  effectMocks.pushToast.mockClear();
+});
 
 function stateAtFridayWithActiveBossWeek(): GameState {
   const initial = createInitialGameState(20260508);
   const definition = getBossDefinition('BEDROOM_DAY_TRADER') as BossWeekDefinition;
 
   return {
+    effects: [],
     save: { ...initial.save },
     run: {
       ...initial.run,
@@ -40,6 +61,7 @@ describe('boss week resolution in the reducer', () => {
     // The player lost ground from Monday to Friday in this scenario.
     const state: GameState = {
       ...base,
+      effects: [],
       run: {
         ...base.run,
         cash: target - 800,
@@ -59,6 +81,7 @@ describe('boss week resolution in the reducer', () => {
   it('does not promote on Friday when no boss week is active', () => {
     const initial = createInitialGameState(20260508);
     const state: GameState = {
+      effects: [],
       save: { ...initial.save },
       run: {
         ...initial.run,
@@ -87,6 +110,7 @@ describe('weekly recap delta', () => {
     // and is now sitting on $8,000 cash with no open positions on Friday morning.
     const initial = createInitialGameState(20260508);
     const state: GameState = {
+      effects: [],
       save: { ...initial.save },
       run: {
         ...initial.run,
@@ -105,6 +129,31 @@ describe('weekly recap delta', () => {
     expect(next.run.weekResult?.startNetWorth).toBe(5000);
     expect(next.run.weekResult?.netWorthDelta).toBe(3000);
     expect(next.run.weekResult?.cashDelta).toBe(3000);
+  });
+});
+
+describe('queued game effects', () => {
+  it('queues trade effects without calling audio or toast modules from the reducer', () => {
+    const state = createInitialGameState(20260508);
+    const symbol = state.run.tickers[0].definition.symbol;
+    const price = state.run.tickers[0].prices[0].price;
+
+    const next = gameReducer(state, { type: 'BUY_SHARES', symbol, quantity: 10, price });
+
+    expect(effectMocks.playSfx).not.toHaveBeenCalled();
+    expect(effectMocks.pushToast).not.toHaveBeenCalled();
+    expect(next.effects).toContainEqual({ type: 'SFX', id: 'buy' });
+  });
+
+  it('clears queued effects after the shell flushes them', () => {
+    const state = {
+      ...createInitialGameState(20260508),
+      effects: [{ type: 'SFX' as const, id: 'buy' as const }]
+    };
+
+    const next = gameReducer(state, { type: 'CLEAR_EFFECTS' });
+
+    expect(next.effects).toEqual([]);
   });
 });
 

@@ -1,17 +1,21 @@
-import type { PricePoint, RestingOrder, RestingOrderType, RunState, WeekDay } from '../game/types';
-import { pushToast } from '../ui/toasts';
+import type { GameEffect, PricePoint, RestingOrder, RestingOrderType, RunState, WeekDay } from '../game/types';
 
 /**
  * Sweeps all resting orders against the day's high/low. Triggered orders execute at the
  * trigger price (no slippage in v1). Untriggered orders carry forward.
  */
 export function sweepRestingOrders(run: RunState, day: WeekDay): RunState {
-  if (run.restingOrders.length === 0) return run;
+  return sweepRestingOrdersWithEffects(run, day).run;
+}
+
+export function sweepRestingOrdersWithEffects(run: RunState, day: WeekDay): { run: RunState; effects: GameEffect[] } {
+  if (run.restingOrders.length === 0) return { run, effects: [] };
 
   const remaining: RestingOrder[] = [];
   let cash = run.cash;
   let sharePositions = run.sharePositions;
   const logs = [...run.weekLog];
+  const effects: GameEffect[] = [];
 
   for (const order of run.restingOrders) {
     const ticker = run.tickers.find((t) => t.definition.symbol === order.symbol);
@@ -38,10 +42,10 @@ export function sweepRestingOrders(run: RunState, day: WeekDay): RunState {
     cash = executed.cash;
     const fillLog = `${humanLabel(order.type)} triggered: ${order.quantity} ${order.symbol} @ $${fillPrice.toFixed(2)}.`;
     logs.push(fillLog);
-    pushToast(fillLog, order.type === 'STOP_LOSS' ? 'warn' : 'success');
+    effects.push({ type: 'TOAST', message: fillLog, tone: order.type === 'STOP_LOSS' ? 'warn' : 'success' });
   }
 
-  return { ...run, restingOrders: remaining, cash, sharePositions, weekLog: logs };
+  return { run: { ...run, restingOrders: remaining, cash, sharePositions, weekLog: logs }, effects };
 }
 
 export function isTriggered(order: RestingOrder, bar: PricePoint): boolean {

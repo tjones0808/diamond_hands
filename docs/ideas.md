@@ -41,27 +41,32 @@
 - **Toast Notifications**: in-game transient toast stack for stop-loss fills, limit fills, client redemptions, promotions, boss-week reveals, SEC notices, balanced-trader bonus, and bankruptcy. Auto-dismiss after 4s, click to dismiss earlier. Tone variants (info / success / warn / danger).
 - **Bundle Splitting**: Phaser dynamic-imported inside `RoomCanvas`; Vite `manualChunks` for `phaser`, `react-vendor`, and the app. Initial JS bundle dropped from 1.8MB → ~325KB (gzip ~102KB). Phaser loads async after the rest of the app is interactive.
 
+## Sprint 2026-05-13: Foundation Stabilization
+
+- [x] **Save migration hardening**: deep-merge old nested localStorage saves with current defaults so new settings/stats/unlocks do not load as `undefined`.
+- [x] **Reducer effect queue**: reducers enqueue audio/toast effects instead of calling browser/UI modules during state calculation.
+- [x] **1280px terminal hardening**: keep the terminal in three columns at desktop widths and compact the trade ticket so controls do not overlap the rails.
+- [x] **Effect flush coverage**: focused test verifies queued sound/toast effects still reach the UI modules after the pure reducer change.
+- [ ] **Repo hygiene follow-up**: decide whether generated `dist/`, `.dev-server/`, and Claude worktree output should stay tracked or be cleaned from main.
+
 ## Backlog
 
 ### Gameplay depth
-- **Covered Calls + naked short options**: requires share-position constraint. Sell calls against held shares for income; risk capped by stock ownership.
+- **Naked short options**: sell options without full collateral at higher tiers, with explicit margin requirement and blow-up risk.
 - **Order book depth / bid-ask spread**: bid + ask instead of single mid-market price. Higher spread for low-quality / low-volume tickers. Affects slippage.
 - **Stop / limit on options too** (currently shares only).
 - **Intraday auto-execution at Hedge Fund Founder tier**: stops fire mid-day, not just on day-advance.
 
 ### Pressure systems
-- **AUM + LP letters at Fund Manager tier**: bigger pool of capital is already there with 4 clients; need quarterly LP review modal with redemption mechanics.
-- **Daily loss limits at Prop Desk**: get fired if a single day drops more than $X.
-- **Insider trading / regulatory risk**: temptation system — trade on a tip for outsize gains, risk an SEC penalty.
+- **LP letters**: turn quarterly LP review results into flavorful letters with concrete praise/blame and investor-specific asks.
+- **Compliance escalation**: repeated dirty-money choices unlock harsher audits, trading bans, and reputation scars.
 
 ### Content depth
 - **More events**: cards themed by tier (e.g. Fed weeks more common at higher tiers).
 - **Market Personality**: deeper recurring lore arcs beyond the 4-beat per-ticker cycle.
-- **Rival Traders**: 2-3 named rivals on a leaderboard who react to your biggest wins and blowups.
+- **Rival trader arcs**: rivals remember grudges, copy trades, beat you to clients, and become boss-week antagonists.
 - **Bigger watchlist at Prop Desk+**: currently fixed at 8 tickers; could scale to 10–12 at higher tiers (now have 20 in the pool).
 
 ### Polish + accessibility
-- **Keyboard Shortcuts**: 1-8 to select tickers, Space for Advance Day, B/S for buy/sell, C for close, M for mute, J for journal, Esc to dismiss modals.
-- **Bundle splitting**: Phaser dynamic-import + manualChunks. 1.7MB initial load is a deal-breaker for first impressions.
 - **Mobile / responsive polish**: the game is desktop-only at narrow widths.
 - **Endgame Wall Street Floor**: dense command-center Phaser scene at Hedge Fund Founder, institutional-scale trades.
