@@ -132,6 +132,121 @@ button:focus-visible {
   border-color: var(--cyan);
 }
 
+.tip-backdrop {
+  position: fixed;
+  z-index: 13; /* above terminal but below recap (z-index 11) — wait, must be above recap so tip is interactive */
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 5, 0.88);
+  backdrop-filter: blur(3px);
+}
+
+.tip-panel {
+  width: min(480px, calc(100vw - 32px));
+  border: 1px solid rgba(250, 204, 21, 0.6);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(40, 18, 4, 0.96), rgba(2, 7, 6, 0.97));
+  box-shadow: 0 0 56px rgba(250, 204, 21, 0.25);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  font-family: Consolas, "Liberation Mono", monospace;
+}
+
+.tip-panel.sec {
+  border-color: rgba(248, 113, 133, 0.55);
+  box-shadow: 0 0 48px rgba(248, 113, 133, 0.22);
+}
+
+.tip-panel header span {
+  display: block;
+  color: var(--amber);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tip-panel.sec header span { color: var(--red); }
+
+.tip-panel header h2 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+}
+
+.tip-source {
+  margin: 0;
+  color: #fef3c7;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tip-body {
+  margin: 0;
+  color: #fef3c7;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tip-tradeoffs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.tip-tradeoffs li {
+  border-left: 3px solid var(--amber);
+  background: rgba(2, 6, 5, 0.5);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #fef3c7;
+}
+
+.tip-tradeoffs li.loss {
+  border-color: var(--red);
+}
+
+.tip-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tip-accept,
+.tip-decline {
+  cursor: pointer;
+  border: 0;
+  border-radius: 6px;
+  padding: 11px 12px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tip-accept {
+  background: linear-gradient(135deg, var(--amber), #f97316);
+  color: #220006;
+}
+
+.tip-decline {
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--text);
+  border: 1px solid rgba(148, 163, 184, 0.36);
+}
+
+.tip-accept:hover,
+.tip-decline:hover {
+  filter: brightness(1.08);
+}
+
 .settings-backdrop {
   position: fixed;
   z-index: 20;
@@ -539,6 +654,55 @@ button:focus-visible {
   font-size: 13px;
 }
 
+.journal-leaderboard h3 {
+  margin: 0 0 8px;
+  color: var(--amber);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.journal-leaderboard ul {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.leader-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 80px 90px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  border-radius: 5px;
+  background: rgba(2, 6, 5, 0.55);
+  padding: 6px 9px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.leader-row.me {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: linear-gradient(90deg, rgba(2, 24, 30, 0.7), rgba(2, 6, 5, 0.6));
+}
+
+.leader-row strong {
+  color: var(--amber);
+}
+
+.leader-row em {
+  font-style: normal;
+  text-align: right;
+}
+
+.leader-row b {
+  color: var(--text);
+  text-align: right;
+}
+
 .journal-recent h3 {
   margin: 0 0 8px;
   color: var(--cyan);
@@ -679,7 +843,9 @@ button:focus-visible {
 }
 
 .hud {
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
 }
 
 .hud div,

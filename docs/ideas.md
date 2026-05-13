@@ -28,6 +28,9 @@
 - **Client Portfolio**: promotions to Stock Broker spawn 2 clients with names, backstories, and risk tolerances. Each Friday their balance moves with your weekly performance × their beta, they pay you a weekly management fee deposited to cash, and they redeem if drawdown breaches their threshold or patience hits zero. Scales up at Fund Manager (4 clients, larger AUM) and Hedge Fund Founder (5 clients). Client roster shows in the right rail with balance, patience meter, and redemption hint.
 - **Content expansion**: 20 tickers (was 10), 35 event cards (was 21). Each ticker has a 4-beat recurring narrative arc that cycles seed-deterministically across weeks so a ticker has a memorable storyline.
 - **Settings Panel**: gear icon in the market tape opens a modal with SFX + music volume sliders, reduced-motion toggle, colorblind palette toggle, replay-tutorial action, and a reset-save destructive action. Settings persist in save.
+- **Daily Loss Limits at Prop Desk**: HUD shows live daily loss vs $1500 cap. Each breach is a strike (-4 reputation); three strikes in a run and the desk fires you (bankruptcy). Resets on every new day.
+- **Rival Traders**: 3 named rivals generated per run with personality-based weekly random walks. Leaderboard in the Run Journal shows your rank vs them. Rivals react to your big wins/losses with named jeers, cheers, or brags.
+- **Insider Trading Temptation**: random Monday tip event from week 2+. Accept for a guaranteed Wednesday shock prediction, but ~22% chance of an SEC investigation on Friday: cash fine ($1,500 + 8% of cash) + reputation hit (-8). Decline for +1 reputation. Tip and SEC modals stack properly with the recap.
 
 ## Backlog
 

@@ -2,6 +2,9 @@ import type { GameState, SaveState } from './types';
 import { generateInitialMarketState } from '../market/marketGenerator';
 import { getStartingPerk } from '../content/tierRewards';
 import { emptyStats } from '../save/runJournal';
+import { generateRivals } from '../career/rivals';
+import { createRng } from '../simulation/rng';
+import { maybeOfferTip } from '../career/insiderTips';
 
 export function createInitialSave(): SaveState {
   return {
@@ -30,7 +33,7 @@ export function createInitialGameState(seed = Date.now(), save = createInitialSa
   const market = generateInitialMarketState(seed);
   const perk = getStartingPerk(save.highestTier);
 
-  return {
+  const state: GameState = {
     save,
     run: {
       seed,
@@ -60,7 +63,14 @@ export function createInitialGameState(seed = Date.now(), save = createInitialSa
       weekStartNetWorth: 5000 + perk.bonusCash,
       weekStartCash: 5000 + perk.bonusCash,
       restingOrders: [],
-      clients: []
+      clients: [],
+      dayStartNetWorth: 5000 + perk.bonusCash,
+      dailyLossStrikes: 0,
+      rivals: generateRivals(createRng(seed + 313))
     }
   };
+
+  const tip = maybeOfferTip(state.run);
+  if (tip) state.run.pendingInsiderTip = tip;
+  return state;
 }

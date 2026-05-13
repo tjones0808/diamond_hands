@@ -182,6 +182,45 @@ export interface RunState {
   weekStartCash: number;
   restingOrders: RestingOrder[];
   clients: Client[];
+  /** Net worth captured at the START of today (any day). Used for daily loss limit checks. */
+  dayStartNetWorth: number;
+  /** Counts daily-loss-limit breaches this run. At 3, the player is fired from the prop desk. */
+  dailyLossStrikes: number;
+  /** Rivals on the leaderboard (per-run). */
+  rivals: Rival[];
+  /** Pending tip offered to the player (modal). */
+  pendingInsiderTip?: InsiderTip;
+  /** Accepted tip for the current week. Wednesday's shock will be forced to match. */
+  activeInsiderTip?: InsiderTip;
+  /** Set on Friday when SEC fines you for an accepted tip. */
+  secInvestigation?: SecInvestigation;
+}
+
+export type RivalPersonality = 'AGGRESSIVE' | 'CAUTIOUS' | 'DISCIPLINED';
+
+export interface Rival {
+  id: string;
+  name: string;
+  personality: RivalPersonality;
+  balance: number;
+  startingBalance: number;
+  /** Last week's % move (visible in the leaderboard). */
+  lastWeekPct: number;
+  /** Their best weekly print of the run, for taunting. */
+  bestWeekPct: number;
+}
+
+export interface InsiderTip {
+  symbol: string;
+  eventId: string;
+  eventTitle: string;
+  source: string;
+  expectedDirection: 'UP' | 'DOWN';
+}
+
+export interface SecInvestigation {
+  fineAmount: number;
+  reputationHit: number;
 }
 
 export type RiskTolerance = 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE';

@@ -28,7 +28,10 @@ const run: RunState = {
   weekStartNetWorth: 5000,
   weekStartCash: 5000,
   restingOrders: [],
-  clients: []
+  clients: [],
+  dayStartNetWorth: 5000,
+  dailyLossStrikes: 0,
+  rivals: []
 };
 
 describe('advanceDay', () => {

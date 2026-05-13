@@ -26,6 +26,9 @@ import { accrueMarginInterest } from '../trading/margin';
 import { cancelRestingOrder, createRestingOrder, sweepRestingOrders } from '../trading/restingOrders';
 import type { RestingOrderType } from './types';
 import { attachClientsOnPromotion, settleClientsForWeek } from '../career/clientPortfolio';
+import { captureDayStartNetWorth, checkDailyLossLimit } from '../career/dailyLossLimit';
+import { tickRivalsForWeek } from '../career/rivals';
+import { maybeOfferTip, rollSecInvestigation } from '../career/insiderTips';
 
 export function checkBossWeekStart(run: RunState): RunState {
   if (run.bossWeek) return run;
@@ -58,7 +61,10 @@ export type GameAction =
   | { type: 'UNLOCK_SECOND_MONITOR' }
   | { type: 'UNLOCK_BETTER_NEWS_FEED' }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<import('./types').SettingsState> }
-  | { type: 'RESET_TUTORIAL' };
+  | { type: 'RESET_TUTORIAL' }
+  | { type: 'ACCEPT_INSIDER_TIP' }
+  | { type: 'DECLINE_INSIDER_TIP' }
+  | { type: 'DISMISS_SEC_INVESTIGATION' };
 
 const expiryDays: OptionExpiryDay[] = ['TUE', 'THU', 'FRI'];
 
@@ -97,9 +103,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, run: createRestingOrder(state.run, action.orderType, action.symbol, action.quantity, action.triggerPrice) };
     case 'CANCEL_RESTING_ORDER':
       return { ...state, run: cancelRestingOrder(state.run, action.orderId) };
-    case 'DISMISS_RECAP':
+    case 'DISMISS_RECAP': {
       if (!state.run.weekResult) return state;
-      return { ...state, run: { ...state.run, weekResult: undefined } };
+      const cleared: RunState = { ...state.run, weekResult: undefined };
+      const offered = maybeOfferTip(cleared);
+      return { ...state, run: offered ? { ...cleared, pendingInsiderTip: offered } : cleared };
+    }
     case 'COMPLETE_TUTORIAL':
       if (state.save.hasCompletedTutorial) return state;
       return { ...state, save: { ...state.save, hasCompletedTutorial: true } };
@@ -109,6 +118,35 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, save: { ...state.save, settings: { ...state.save.settings, ...action.settings } } };
     case 'RESET_TUTORIAL':
       return { ...state, save: { ...state.save, hasCompletedTutorial: false } };
+    case 'ACCEPT_INSIDER_TIP': {
+      if (!state.run.pendingInsiderTip) return state;
+      return {
+        ...state,
+        run: {
+          ...state.run,
+          activeInsiderTip: state.run.pendingInsiderTip,
+          pendingInsiderTip: undefined,
+          weekLog: [
+            ...state.run.weekLog,
+            `You took the tip on ${state.run.pendingInsiderTip.symbol}. The wire is hot.`
+          ]
+        }
+      };
+    }
+    case 'DECLINE_INSIDER_TIP':
+      if (!state.run.pendingInsiderTip) return state;
+      return {
+        ...state,
+        run: {
+          ...state.run,
+          pendingInsiderTip: undefined,
+          reputation: Math.min(100, state.run.reputation + 1),
+          weekLog: [...state.run.weekLog, 'You walked away from the tip. Clean conscience, +1 reputation.']
+        }
+      };
+    case 'DISMISS_SEC_INVESTIGATION':
+      if (!state.run.secInvestigation) return state;
+      return { ...state, run: { ...state.run, secInvestigation: undefined } };
     case 'UNLOCK_SECOND_MONITOR':
       if (state.save.unlocks.secondMonitor || state.run.cash < 750) return state;
       return {
@@ -144,25 +182,31 @@ function advanceRunDay(state: GameState): GameState {
   if (currentDay === 'TUE') {
     const swept = sweepRestingOrders(state.run, currentDay);
     const settled = settleIfExpiringToday(swept, currentDay);
+    const lossCheck = checkDailyLossLimit(settled);
+    if (lossCheck.fired) return { ...state, run: lossCheck.run };
     playExpirySfx(state.run, settled);
     playSfx('dayAdvance');
-    const afterShock = applyWednesdayShock(advanceDay(accrueMarginInterest(settled)));
+    const afterShock = applyWednesdayShock(advanceDay(accrueMarginInterest(lossCheck.run)));
     if (afterShock.activeEvent) playSfx('shock');
-    return { ...state, run: afterShock };
+    return { ...state, run: captureDayStartNetWorth(afterShock) };
   }
 
   if (currentDay === 'THU') {
     const swept = sweepRestingOrders(state.run, currentDay);
     const settled = settleIfExpiringToday(swept, currentDay);
+    const lossCheck = checkDailyLossLimit(settled);
+    if (lossCheck.fired) return { ...state, run: lossCheck.run };
     playExpirySfx(state.run, settled);
     playSfx('dayAdvance');
-    return { ...state, run: advanceDay(accrueMarginInterest(settled)) };
+    return { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) };
   }
 
   if (currentDay !== 'FRI') {
     const swept = sweepRestingOrders(state.run, currentDay);
+    const lossCheck = checkDailyLossLimit(swept);
+    if (lossCheck.fired) return { ...state, run: lossCheck.run };
     playSfx('dayAdvance');
-    return { ...state, run: advanceDay(accrueMarginInterest(swept)) };
+    return { ...state, run: captureDayStartNetWorth(advanceDay(accrueMarginInterest(lossCheck.run))) };
   }
 
   // True weekly baseline = Monday's open snapshot, NOT Friday morning. The player may have
@@ -174,7 +218,31 @@ function advanceRunDay(state: GameState): GameState {
   const beforeXp = state.run.xp;
   const activeEvent = state.run.activeEvent;
   const sweptFri = sweepRestingOrders(state.run, 'FRI');
-  let settled = settleIfExpiringToday(accrueMarginInterest(sweptFri), 'FRI');
+  const fridayLossCheck = checkDailyLossLimit(sweptFri);
+  if (fridayLossCheck.fired) return { ...state, run: fridayLossCheck.run };
+
+  // SEC roll for accepted insider tips. Happens before settlement so the fine hits cash now.
+  let postSec = fridayLossCheck.run;
+  let secInvestigation: typeof state.run.secInvestigation;
+  if (postSec.activeInsiderTip) {
+    const secRng = createRng(state.run.seed + state.run.week * 17);
+    secInvestigation = rollSecInvestigation(secRng, postSec);
+    if (secInvestigation) {
+      postSec = {
+        ...postSec,
+        cash: Math.max(0, Math.round((postSec.cash - secInvestigation.fineAmount) * 100) / 100),
+        reputation: Math.max(0, postSec.reputation - secInvestigation.reputationHit),
+        weekLog: [
+          ...postSec.weekLog,
+          `SEC investigation opened on ${postSec.activeInsiderTip.symbol} tip.`,
+          `Fine: -$${secInvestigation.fineAmount.toFixed(2)}. Reputation: -${secInvestigation.reputationHit}.`
+        ],
+        secInvestigation
+      };
+    }
+  }
+
+  let settled = settleIfExpiringToday(accrueMarginInterest(postSec), 'FRI');
   let afterNetWorth = getNetWorth(settled);
   const outcome = applyWeekOutcome({ cashDelta: afterNetWorth - weekStartNetWorth, reputation: settled.reputation, xp: settled.xp });
 
@@ -284,20 +352,28 @@ function advanceRunDay(state: GameState): GameState {
     tickers: advanced.tickers,
     tickerSeries: advanced.tickerSeries
   });
+  const rivalRng = createRng(state.run.seed + advanced.week * 619);
+  const updatedRivals = tickRivalsForWeek(advanced.rivals, rivalRng);
   const withNewMarket: typeof advanced = {
     ...advanced,
     marketRegime: nextMarket.regime,
     tickers: nextMarket.tickers,
-    tickerSeries: nextMarket.tickerSeries
+    tickerSeries: nextMarket.tickerSeries,
+    rivals: updatedRivals
   };
 
   // Snapshot Monday-open baselines and clear any resting orders left over from last week.
+  const newMondayNw = getNetWorth(withNewMarket);
   let newWeekRun: typeof withNewMarket = {
     ...withNewMarket,
     weekStartCash: withNewMarket.cash,
-    weekStartNetWorth: getNetWorth(withNewMarket),
-    restingOrders: []
+    weekStartNetWorth: newMondayNw,
+    dayStartNetWorth: newMondayNw,
+    restingOrders: [],
+    activeInsiderTip: undefined,
+    pendingInsiderTip: undefined
   };
+  // Tip is offered post-recap via DISMISS_RECAP so it doesn't stack on top of the modal.
 
   // Promotion to a tier with clients triggers a new roster generation.
   if (promotion.promoted) {
@@ -417,8 +493,14 @@ function isOptionExpiryDay(day: WeekDay): day is OptionExpiryDay {
 
 function applyWednesdayShock(run: RunState): RunState {
   const rng = createRng(run.seed + run.week * 97);
-  const event = rng.pick(eventDeck);
-  const impacted = event.symbol ?? run.tickers.find((ticker) => ticker.definition.sector === event.sector)?.definition.symbol ?? rng.pick(run.tickers).definition.symbol;
+  // If the player accepted an insider tip this week, force the shock to match.
+  let event = rng.pick(eventDeck);
+  if (run.activeInsiderTip) {
+    const tipEvent = eventDeck.find((e) => e.id === run.activeInsiderTip!.eventId);
+    if (tipEvent) event = tipEvent;
+  }
+  const targetedSymbol = run.activeInsiderTip ? run.activeInsiderTip.symbol : undefined;
+  const impacted = targetedSymbol ?? event.symbol ?? run.tickers.find((ticker) => ticker.definition.sector === event.sector)?.definition.symbol ?? rng.pick(run.tickers).definition.symbol;
   const tickers = run.tickers.map((ticker) => {
     if (ticker.definition.symbol !== impacted) return ticker;
     const prices = ticker.prices.map((point) => {

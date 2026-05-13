@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { SaveState } from '../game/types';
+import type { RunState, SaveState } from '../game/types';
 import { tierLabel } from '../content/tierRewards';
+import { buildLeaderboard } from '../career/rivals';
+import { getNetWorth } from '../game/selectors';
 
-export function RunJournal({ save }: { save: SaveState }) {
+export function RunJournal({ save, run }: { save: SaveState; run: RunState }) {
   const [open, setOpen] = useState(false);
   const stats = save.stats;
+  const leaderboard = run.rivals.length > 0
+    ? buildLeaderboard(run, getNetWorth(run), 5000)
+    : [];
 
   const modal = open ? (
     <div className="journal-backdrop" role="dialog" aria-modal="true" aria-label="Run journal" onClick={() => setOpen(false)}>
@@ -35,6 +40,22 @@ export function RunJournal({ save }: { save: SaveState }) {
               />
               <Stat label="Balanced weeks" value={stats.totalBalancedWeeks.toString()} />
             </section>
+
+            {leaderboard.length > 0 ? (
+              <section className="journal-leaderboard" aria-label="Rival leaderboard">
+                <h3>Rivals</h3>
+                <ul>
+                  {leaderboard.map((row) => (
+                    <li key={row.id} className={row.isPlayer ? 'leader-row me' : 'leader-row'}>
+                      <strong>#{row.rank}</strong>
+                      <span>{row.name}</span>
+                      <em className={row.pct >= 0 ? 'gain' : 'loss'}>{row.pct >= 0 ? '+' : ''}{row.pct.toFixed(1)}%</em>
+                      <b>${Math.round(row.balance).toLocaleString()}</b>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
             <section className="journal-recent" aria-label="Recent runs">
               <h3>Recent runs</h3>
