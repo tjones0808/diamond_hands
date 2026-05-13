@@ -12,14 +12,16 @@ export function WeeklyGoals({ run }: { run: RunState }) {
       </div>
       <div className="goal-list">
         {goals.map((goal) => {
-          const progress = Math.min(100, Math.round((goal.current / goal.target) * 100));
+          const progress = Math.min(100, Math.round((goal.current / Math.max(1, goal.target)) * 100));
           return (
             <div className={goal.completed ? 'goal-row complete' : 'goal-row'} key={goal.id}>
-              <div>
+              <div className="goal-head">
                 <strong>{goal.label}</strong>
-                <small>{goal.description}</small>
+                <span className="goal-progress-text">
+                  {formatGoalValue(goal.current)} <em>/</em> {formatGoalValue(goal.target)}
+                </span>
               </div>
-              <span>{formatGoalValue(goal.current)} / {formatGoalValue(goal.target)}</span>
+              <small className="goal-description">{goal.description}</small>
               <div className="goal-meter" aria-hidden="true">
                 <i style={{ width: `${progress}%` }} />
               </div>

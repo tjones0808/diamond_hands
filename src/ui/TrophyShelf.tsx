@@ -22,10 +22,9 @@ export function TrophyShelf({ save }: { save: SaveState }) {
 
   return (
     <aside className="trophy-shelf" aria-label="Trophy shelf">
-      <header>
-        <span>Trophies</span>
-        <small>{reached.size}/{tierOrder.length}</small>
-      </header>
+      <span className="trophy-count" title="Trophies unlocked across all your runs.">
+        🎖 {reached.size}/{tierOrder.length}
+      </span>
       <ul>
         {tierOrder.map((tier) => {
           const unlocked = reached.has(tier);
@@ -33,13 +32,13 @@ export function TrophyShelf({ save }: { save: SaveState }) {
           return (
             <li
               key={tier}
-              className={unlocked ? 'trophy-item unlocked' : 'trophy-item locked'}
+              className={unlocked ? 'trophy-slot unlocked' : 'trophy-slot locked'}
               data-tier={tier}
               data-unlocked={unlocked ? 'true' : 'false'}
               title={unlocked ? `${artifact.label} — ${artifact.description}` : `Locked — reach ${tierLabel(tier)}`}
+              aria-label={unlocked ? `${artifact.label} unlocked` : `${tierLabel(tier)} locked`}
             >
-              <span className="trophy-icon" aria-hidden="true">{unlocked ? tierIcons[tier] : '·'}</span>
-              <span className="trophy-label">{unlocked ? artifact.label : '???'}</span>
+              <span aria-hidden="true">{unlocked ? tierIcons[tier] : '·'}</span>
             </li>
           );
         })}

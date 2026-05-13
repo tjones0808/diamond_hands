@@ -923,72 +923,59 @@ button:focus-visible {
 .trophy-shelf {
   position: absolute;
   z-index: 2;
-  right: 10px;
+  left: 50%;
   bottom: 10px;
-  display: grid;
-  gap: 4px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   border: 1px solid rgba(250, 204, 21, 0.32);
-  border-radius: 6px;
-  background: rgba(2, 6, 5, 0.78);
+  border-radius: 999px;
+  background: rgba(2, 6, 5, 0.82);
   box-shadow: 0 0 18px rgba(250, 204, 21, 0.12);
-  padding: 7px 9px;
+  padding: 5px 10px;
   pointer-events: auto;
   font-family: Consolas, "Liberation Mono", monospace;
-  max-width: 170px;
 }
 
-.trophy-shelf header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
+.trophy-shelf .trophy-count {
   color: var(--amber);
   font-size: 10px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.trophy-shelf header small {
-  color: #b7d8d0;
-  font-size: 10px;
+  white-space: nowrap;
 }
 
 .trophy-shelf ul {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.trophy-item {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  padding: 2px 0;
+  gap: 4px;
 }
 
-.trophy-item.unlocked {
+.trophy-slot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.trophy-slot.unlocked {
+  background: rgba(74, 45, 2, 0.62);
+  border: 1px solid rgba(250, 204, 21, 0.55);
   color: #fef3c7;
 }
 
-.trophy-item.locked {
+.trophy-slot.locked {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px dashed rgba(148, 163, 184, 0.28);
   color: #475569;
-  opacity: 0.55;
-}
-
-.trophy-icon {
-  text-align: center;
-  font-size: 13px;
-}
-
-.trophy-label {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  opacity: 0.6;
 }
 
 .room-canvas canvas {
@@ -2250,26 +2237,63 @@ button:focus-visible {
 
 .goal-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 3px 8px;
+  gap: 4px;
   min-width: 0;
-  padding: 6px 7px;
+  padding: 8px 10px;
 }
 
-.goal-row strong,
-.goal-row span {
+.goal-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.goal-row strong {
   overflow: hidden;
   color: var(--text);
   font-family: Consolas, "Liberation Mono", monospace;
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.goal-progress-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.goal-progress-text em {
+  color: #8abeb5;
+  font-style: normal;
+  font-size: 10px;
+}
+
+.goal-description {
+  display: block;
+  color: #8abeb5;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  white-space: normal;
+}
+
 .goal-row.complete {
-  border-color: rgba(52, 211, 153, 0.48);
+  border-color: rgba(52, 211, 153, 0.55);
   background: rgba(20, 83, 45, 0.34);
+}
+
+.goal-row.complete .goal-progress-text {
+  color: var(--green);
 }
 
 .goal-meter {

@@ -1,8 +1,19 @@
 import { useState } from 'react';
 import { getCareerGate } from '../career/careerEngine';
 import type { GameAction } from '../game/reducer';
-import type { RunState, SaveState, WeekDay } from '../game/types';
+import type { MarketTicker, RunState, SaveState, WeekDay } from '../game/types';
 import { getCurrentPrice, getNetWorth } from '../game/selectors';
+
+const dayOrder: WeekDay[] = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+
+function getPreviousClose(ticker: MarketTicker, currentDay: WeekDay): number {
+  const idx = dayOrder.indexOf(currentDay);
+  if (idx > 0) {
+    return ticker.prices[idx - 1]?.close ?? ticker.prices[idx]?.open ?? 0;
+  }
+  // Monday: use the most recent historical bar (last Friday).
+  return ticker.priorHistory.at(-1)?.close ?? ticker.prices[0]?.open ?? 0;
+}
 import { StockDetailPanel } from './StockDetailPanel';
 import { TradeTicket } from './TradeTicket';
 import { WeeklyGoals } from './WeeklyGoals';
@@ -30,8 +41,10 @@ export function TradingTerminal({ run, save, dispatch }: { run: RunState; save: 
         <div className="watchlist" aria-label="Watchlist">
           {run.tickers.map((item) => {
             const price = getCurrentPrice(run, item.definition.symbol);
-            const start = item.prices[0]?.price ?? price;
-            const move = ((price - start) / start) * 100;
+            // Daily change: vs previous trading day's close. On MON that's last Friday's close
+            // (the final bar of priorHistory). On TUE-FRI it's yesterday's close in this week.
+            const previousClose = getPreviousClose(item, run.day);
+            const move = previousClose > 0 ? ((price - previousClose) / previousClose) * 100 : 0;
             const moveText = `${move >= 0 ? '+' : ''}${move.toFixed(1)}%`;
             return (
               <button className={item.definition.symbol === symbol ? 'ticker selected' : 'ticker'} key={item.definition.symbol} type="button" onClick={() => setSymbol(item.definition.symbol)}>

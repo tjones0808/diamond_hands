@@ -294,12 +294,13 @@ test.describe('trophy shelf', () => {
   test('shows a single unlocked trophy for a fresh save', async ({ page }) => {
     await bootIntoGame(page);
 
-    const shelf = page.getByLabel('Trophy shelf');
+    const shelf = page.locator('.trophy-shelf');
     await expect(shelf).toBeVisible();
-    await expect(shelf.getByText(/^1\/5$/)).toBeVisible();
+    await expect(shelf.locator('.trophy-count')).toContainText('1/5');
     await expect(shelf.locator('[data-tier="BEDROOM_DAY_TRADER"]')).toHaveAttribute('data-unlocked', 'true');
     await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"]')).toHaveAttribute('data-unlocked', 'false');
-    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"] .trophy-label')).toHaveText('???');
+    // Locked slot tooltip names the tier the player needs to reach.
+    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"]')).toHaveAttribute('title', /Prop Desk Rookie/);
   });
 
   test('shows persistent unlocks from prior runs and the starter perk applies', async ({ context, page }) => {
@@ -318,10 +319,11 @@ test.describe('trophy shelf', () => {
     });
     await bootIntoGame(page);
 
-    const shelf = page.getByLabel('Trophy shelf');
-    await expect(shelf.getByText(/^3\/5$/)).toBeVisible();
-    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"] .trophy-label')).toHaveText('Rookie Trophy');
-    await expect(shelf.locator('[data-tier="STOCK_BROKER"] .trophy-label')).toHaveText('Brass Nameplate');
+    const shelf = page.locator('.trophy-shelf');
+    await expect(shelf.locator('.trophy-count')).toContainText('3/5');
+    // Unlocked slot tooltip carries the artifact name.
+    await expect(shelf.locator('[data-tier="PROP_DESK_ROOKIE"]')).toHaveAttribute('title', /Rookie Trophy/);
+    await expect(shelf.locator('[data-tier="STOCK_BROKER"]')).toHaveAttribute('title', /Brass Nameplate/);
     await expect(shelf.locator('[data-tier="FUND_MANAGER"]')).toHaveAttribute('data-unlocked', 'false');
 
     // Starting perk: $5000 + $1000 broker perk = $6000 cash on the HUD.
