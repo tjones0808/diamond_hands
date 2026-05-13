@@ -21,6 +21,7 @@ import { getStartingPerk, highestTier, tierArtifacts } from '../content/tierRewa
 import { playSfx } from '../audio/audioEngine';
 import { getBossDefinition, isBossEligible, resolveBossWeek } from '../career/bossWeek';
 import { appendRunSummary, applyWeekResultToStats, recordBankruptcy } from '../save/runJournal';
+import { checkAchievements, insertIntoHallOfFame } from '../save/achievements';
 import { applyMoodAfterWeek } from '../career/mood';
 import { accrueMarginInterest } from '../trading/margin';
 import { cancelRestingOrder, createRestingOrder, sweepRestingOrders } from '../trading/restingOrders';
@@ -421,6 +422,21 @@ function advanceRunDay(state: GameState): GameState {
       runsCompleted: nextSave.runsCompleted + 1
     };
     nextSave = appendRunSummary(nextSave, nextRun, afterNetWorth);
+    nextSave = insertIntoHallOfFame(nextSave, {
+      seed: nextRun.seed,
+      endedAtWeek: nextRun.week,
+      endedTier: nextRun.tier,
+      endNetWorth: Math.round(afterNetWorth),
+      endedInBankruptcy: true,
+      endedAt: new Date().toISOString()
+    });
+  }
+
+  // Check achievement unlocks (Friday week-end trigger + RUN_END if bankrupt).
+  const weekTrigger = nextRun.isBankrupt && !state.run.isBankrupt ? 'RUN_END' : 'WEEK_END';
+  const newUnlocks = checkAchievements(nextSave, nextRun, weekTrigger, weekResult);
+  if (newUnlocks.length > 0) {
+    nextSave = { ...nextSave, achievements: [...nextSave.achievements, ...newUnlocks] };
   }
 
   return {

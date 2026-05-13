@@ -1,71 +1,51 @@
-import { useEffect, useReducer } from 'react';
-import { createInitialGameState } from './game/createInitialState';
-import { gameReducer } from './game/reducer';
-import { Hud } from './ui/Hud';
-import { MarketWeekStrip } from './ui/MarketWeekStrip';
-import { PostRunSummary } from './ui/PostRunSummary';
-import { TradingTerminal } from './ui/TradingTerminal';
+import { useEffect, useState } from 'react';
+import { Game } from './Game';
+import { TitleScreen } from './ui/TitleScreen';
 import { loadSave, storeSave } from './save/saveGame';
-import { RoomCanvas } from './scene/RoomCanvas';
-import { MarketTape } from './ui/MarketTape';
-import { WeekRecap } from './ui/WeekRecap';
-import { Coachmark } from './onboarding/Coachmark';
-import { TrophyShelf } from './ui/TrophyShelf';
+import type { SaveState } from './game/types';
 import { setSfxMuted, setSfxVolume } from './audio/audioEngine';
-import { setAmbientMuted, setAmbientTier, setAmbientVolume, stopAmbient } from './audio/ambient';
-import { RunJournal } from './ui/RunJournal';
-import { InsiderTipModal, SecInvestigationModal } from './ui/InsiderTipModal';
+import { setAmbientMuted, setAmbientVolume } from './audio/ambient';
+
+type AppView = 'title' | 'game';
 
 export function App() {
-  const [state, dispatch] = useReducer(gameReducer, undefined, () => createInitialGameState(20260508, loadSave()));
+  const [save, setSave] = useState<SaveState>(() => loadSave());
+  const [view, setView] = useState<AppView>('title');
+  const [runSeed, setRunSeed] = useState<number | null>(null);
 
+  // Persist any save change made from the title screen back to localStorage.
   useEffect(() => {
-    storeSave(state.save);
-  }, [state.save]);
+    storeSave(save);
+  }, [save]);
 
+  // Audio prefs apply on the title screen too (so the music doesn't blast at 100%).
   useEffect(() => {
-    setSfxMuted(state.save.audioMuted);
-    setAmbientMuted(state.save.audioMuted);
-  }, [state.save.audioMuted]);
+    setSfxMuted(save.audioMuted);
+    setAmbientMuted(save.audioMuted);
+    setSfxVolume(save.settings.sfxVolume);
+    setAmbientVolume(save.settings.musicVolume);
+  }, [save.audioMuted, save.settings.sfxVolume, save.settings.musicVolume]);
 
-  useEffect(() => {
-    setSfxVolume(state.save.settings.sfxVolume);
-    setAmbientVolume(state.save.settings.musicVolume);
-  }, [state.save.settings.sfxVolume, state.save.settings.musicVolume]);
+  function startRun(seed: number) {
+    setRunSeed(seed);
+    setView('game');
+  }
 
-  useEffect(() => {
-    setAmbientTier(state.run.tier);
-    return () => {
-      stopAmbient();
-    };
-  }, [state.run.tier]);
+  function quitToTitle() {
+    // Re-read save from localStorage in case the game persisted updates.
+    setSave(loadSave());
+    setView('title');
+  }
 
-  const shellClasses = ['game-shell'];
-  if (state.save.settings.reducedMotion) shellClasses.push('reduced-motion');
-  if (state.save.settings.colorBlindPalette) shellClasses.push('colorblind');
+  if (view === 'title') {
+    return <TitleScreen save={save} onStartRun={startRun} onUpdateSave={setSave} />;
+  }
 
-  return (
-    <main className={shellClasses.join(' ')}>
-      <MarketTape run={state.run} save={state.save} dispatch={dispatch} />
-      <section className="command-deck" aria-label="Career status cockpit">
-        <section className="room-panel" aria-label="Room scene">
-          <RoomCanvas run={state.run} save={state.save} />
-          <TrophyShelf save={state.save} />
-          <RunJournal save={state.save} run={state.run} />
-        </section>
-        <aside className="status-deck" aria-label="Career and week status">
-          <Hud run={state.run} save={state.save} />
-          <MarketWeekStrip currentDay={state.run.day} week={state.run.week} />
-        </aside>
-      </section>
-      <section className="terminal-panel" aria-label="Trading terminal">
-        <TradingTerminal run={state.run} save={state.save} dispatch={dispatch} />
-      </section>
-      <InsiderTipModal run={state.run} dispatch={dispatch} />
-      <SecInvestigationModal run={state.run} dispatch={dispatch} />
-      <WeekRecap run={state.run} dispatch={dispatch} />
-      <PostRunSummary run={state.run} onRestart={() => window.location.reload()} />
-      <Coachmark run={state.run} save={state.save} onComplete={() => dispatch({ type: 'COMPLETE_TUTORIAL' })} />
-    </main>
-  );
+  if (runSeed === null) {
+    // Defensive fallback — should never happen, but bounce back to title if it does.
+    setView('title');
+    return null;
+  }
+
+  return <Game seed={runSeed} initialSave={save} onQuitToTitle={quitToTitle} />;
 }

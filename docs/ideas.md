@@ -31,6 +31,11 @@
 - **Daily Loss Limits at Prop Desk**: HUD shows live daily loss vs $1500 cap. Each breach is a strike (-4 reputation); three strikes in a run and the desk fires you (bankruptcy). Resets on every new day.
 - **Rival Traders**: 3 named rivals generated per run with personality-based weekly random walks. Leaderboard in the Run Journal shows your rank vs them. Rivals react to your big wins/losses with named jeers, cheers, or brags.
 - **Insider Trading Temptation**: random Monday tip event from week 2+. Accept for a guaranteed Wednesday shock prediction, but ~22% chance of an SEC investigation on Friday: cash fine ($1,500 + 8% of cash) + reputation hit (-8). Decline for +1 reputation. Tip and SEC modals stack properly with the recap.
+- **Main Menu / Title Screen**: dedicated landing page with the game title, randomized tagline, "Start a new run" button (with optional seed input), Hall of Fame, Achievements, Settings, and "How to play" (replays tutorial). Lifetime stats row at the bottom (runs played, weeks survived, highest tier, best net worth).
+- **Hall of Fame**: persistent top-10 board of best runs, sorted by ending net worth. Tracks seed/week/tier/bankruptcy-flag so you can rerun great seeds.
+- **Achievements**: 20 skill-based badges unlocking across runs (first green Friday, big-week milestone, premium collector, boss slayer, first promotion, broker/fund-manager/HFF tier reaches, balanced trader, iron stomach, comeback kid, long haul, three strikes, clean conscience, dirty money, got caught, wiped out, spread pro, volatility trader, wealth manager).
+- **Pause Menu**: Esc opens an overlay with Resume, Hall of Fame, Achievements, Settings access, and "Quit to title." Doesn't affect game state — pure UX cover.
+- **Keyboard Shortcuts**: 1–8 select tickers; Space advances the day; B/S/C for buy/sell/close; M for mute; J for journal; Esc for pause; ? for the cheatsheet overlay. Disabled while typing in inputs.
 
 ## Backlog
 

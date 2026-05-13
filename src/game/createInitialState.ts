@@ -25,7 +25,9 @@ export function createInitialSave(): SaveState {
       musicVolume: 0.22,
       reducedMotion: false,
       colorBlindPalette: false
-    }
+    },
+    achievements: [],
+    topRuns: []
   };
 }
 

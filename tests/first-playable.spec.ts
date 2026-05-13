@@ -16,8 +16,17 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
-test('player can buy a call and advance through the week', async ({ page }) => {
+/** Click "Start a new run" on the title screen so the game UI mounts. */
+async function bootIntoGame(page: import('@playwright/test').Page) {
   await page.goto('/');
+  const startBtn = page.getByRole('button', { name: 'Start a new run' });
+  if (await startBtn.count() > 0) {
+    await startBtn.click();
+  }
+}
+
+test('player can buy a call and advance through the week', async ({ page }) => {
+  await bootIntoGame(page);
 
   await expect(page.getByRole('heading', { name: 'Trading Terminal' })).toBeVisible();
   await expect(page.getByLabel('Market week')).toContainText('MON');
@@ -45,7 +54,7 @@ test('player can buy a call and advance through the week', async ({ page }) => {
 });
 
 test('Friday recap names the trade, the shock, and lets the player continue', async ({ page }) => {
-  await page.goto('/');
+  await bootIntoGame(page);
 
   await page.getByRole('button', { name: /Buy Call/i }).click();
   await page.getByRole('button', { name: /Buy Put/i }).click();
@@ -75,7 +84,7 @@ test('Friday recap names the trade, the shock, and lets the player continue', as
 });
 
 test('player can open a call spread and see grouped legs in the recap', async ({ page }) => {
-  await page.goto('/');
+  await bootIntoGame(page);
 
   await page.getByLabel('Strategy').selectOption('CALL_SPREAD');
   await page.getByRole('button', { name: /Open Call Spread/i }).click();
@@ -94,7 +103,7 @@ test('player can open a call spread and see grouped legs in the recap', async ({
 });
 
 test('player can pick a Tuesday expiry that settles before Wednesday shock', async ({ page }) => {
-  await page.goto('/');
+  await bootIntoGame(page);
 
   await page.getByRole('radio', { name: 'TUE' }).click();
   await page.getByRole('button', { name: /Buy Call/i }).click();
@@ -109,7 +118,7 @@ test('player can pick a Tuesday expiry that settles before Wednesday shock', asy
 
 test('dashboard uses a compact top cockpit without page scroll on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1905, height: 768 });
-  await page.goto('/');
+  await bootIntoGame(page);
   await page.locator('.room-canvas canvas').waitFor();
   await page.getByRole('button', { name: 'Advance Day' }).click();
   await page.getByRole('button', { name: 'Advance Day' }).click();
@@ -255,7 +264,7 @@ test('dashboard uses a compact top cockpit without page scroll on desktop', asyn
 
 test.describe('stock detail panel', () => {
   test('renders an extended candlestick chart with prior history and switches tabs', async ({ page }) => {
-    await page.goto('/');
+    await bootIntoGame(page);
 
     const chart = page.locator('.candle-chart');
     await expect(chart).toBeVisible();
@@ -283,7 +292,7 @@ test.describe('stock detail panel', () => {
 
 test.describe('trophy shelf', () => {
   test('shows a single unlocked trophy for a fresh save', async ({ page }) => {
-    await page.goto('/');
+    await bootIntoGame(page);
 
     const shelf = page.getByLabel('Trophy shelf');
     await expect(shelf).toBeVisible();
@@ -307,7 +316,7 @@ test.describe('trophy shelf', () => {
         })
       );
     });
-    await page.goto('/');
+    await bootIntoGame(page);
 
     const shelf = page.getByLabel('Trophy shelf');
     await expect(shelf.getByText(/^3\/5$/)).toBeVisible();
@@ -324,6 +333,62 @@ test.describe('trophy shelf', () => {
   });
 });
 
+test.describe('title screen', () => {
+  test('shows the title screen on load with a Start a new run button', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Career Roguelite Trader' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start a new run' })).toBeVisible();
+    await expect(page.getByText('Hall of Fame')).toBeVisible();
+    await expect(page.getByText('Achievements')).toBeVisible();
+  });
+
+  test('Hall of Fame opens from the title and shows the empty state for a fresh save', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Hall of Fame/ }).click();
+    const hof = page.getByRole('dialog', { name: 'Hall of Fame' });
+    await expect(hof).toBeVisible();
+    await expect(hof.getByText(/No completed runs yet/)).toBeVisible();
+  });
+
+  test('Achievements panel opens from the title and lists locked achievements', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /🎖 Achievements/ }).click();
+    const panel = page.getByRole('dialog', { name: 'Achievements' });
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.ach-item')).toHaveCount(20);
+    // No achievements unlocked yet on a fresh save.
+    await expect(panel.locator('.ach-item.unlocked')).toHaveCount(0);
+  });
+});
+
+test.describe('keyboard shortcuts and pause', () => {
+  test('Esc opens the pause menu and Resume closes it', async ({ page }) => {
+    await bootIntoGame(page);
+    await page.keyboard.press('Escape');
+    const pause = page.getByRole('dialog', { name: 'Pause menu' });
+    await expect(pause).toBeVisible();
+    await pause.getByRole('button', { name: 'Resume run' }).click();
+    await expect(pause).toBeHidden();
+  });
+
+  test('? key opens the shortcut cheatsheet', async ({ page }) => {
+    await bootIntoGame(page);
+    await page.keyboard.press('?');
+    const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText(/Toggle audio mute/)).toBeVisible();
+  });
+
+  test('Space advances the day', async ({ page }) => {
+    await bootIntoGame(page);
+    await expect(page.getByLabel('Market week')).toContainText('MON');
+    // Use focus on body so input handlers don't catch the space.
+    await page.locator('body').click({ position: { x: 1, y: 1 } });
+    await page.keyboard.press('Space');
+    await expect(page.getByLabel('Market week')).toContainText('TUE');
+  });
+});
+
 test.describe('onboarding', () => {
   test.beforeEach(async ({ context }) => {
     // Override the default beforeEach: clear save so the tutorial runs.
@@ -333,7 +398,7 @@ test.describe('onboarding', () => {
   });
 
   test('first-time player sees the tutorial and can skip it', async ({ page }) => {
-    await page.goto('/');
+    await bootIntoGame(page);
 
     const tutorial = page.getByRole('dialog', { name: 'Tutorial' });
     await expect(tutorial).toBeVisible();
@@ -356,7 +421,7 @@ test.describe('onboarding', () => {
   });
 
   test('tutorial auto-advances to the Wednesday shock step when the player advances days', async ({ page }) => {
-    await page.goto('/');
+    await bootIntoGame(page);
 
     const tutorial = page.getByRole('dialog', { name: 'Tutorial' });
     await tutorial.getByRole('button', { name: 'Got it' }).click(); // step 2

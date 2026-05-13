@@ -292,6 +292,15 @@ export interface SaveState {
   stats: LifetimeStats;
   recentRuns: RunSummary[];
   settings: SettingsState;
+  achievements: AchievementUnlock[];
+  topRuns: RunSummary[];
+}
+
+export interface AchievementUnlock {
+  id: string;
+  unlockedAt: string;
+  unlockedAtWeek: number;
+  unlockedAtTier: CareerTier;
 }
 
 export interface SettingsState {
