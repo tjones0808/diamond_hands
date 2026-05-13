@@ -4,7 +4,7 @@ import type { OptionExpiryDay, OptionStrategyType, RestingOrderType, RunState, W
 import { CONTRACT_SIZE, daysToExpiry, estimatePremium } from '../trading/options';
 import { getMoodEffects } from '../career/mood';
 import { getBuyingPower, getLeverageMultiplier } from '../trading/margin';
-import { canUseLimitOrders, canUseStopLosses } from '../career/tierUnlocks';
+import { canUseCoveredCalls, canUseLimitOrders, canUseStopLosses } from '../career/tierUnlocks';
 
 interface TradeTicketProps {
   symbol: string;
@@ -25,7 +25,8 @@ const strategies: StrategyOption[] = [
   { value: 'SINGLE_CALL', label: 'Single', legs: 1 },
   { value: 'CALL_SPREAD', label: 'Call Spread', legs: 2 },
   { value: 'PUT_SPREAD', label: 'Put Spread', legs: 2 },
-  { value: 'STRADDLE', label: 'Straddle', legs: 2 }
+  { value: 'STRADDLE', label: 'Straddle', legs: 2 },
+  { value: 'COVERED_CALL', label: 'Covered Call', legs: 1 }
 ];
 
 const dayOrder: WeekDay[] = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
@@ -44,6 +45,10 @@ export function TradeTicket({ symbol, currentPrice, currentDay, volatility, run,
   const [triggerPrice, setTriggerPrice] = useState<string>('');
   const limitOrdersUnlocked = canUseLimitOrders(run.tier);
   const stopLossesUnlocked = canUseStopLosses(run.tier);
+  const coveredCallsUnlocked = canUseCoveredCalls(run.tier);
+  const sharesHeld = run.sharePositions.find((p) => p.symbol === symbol)?.quantity ?? 0;
+  const coveredCallShareNeed = contractQuantity * 100;
+  const coveredCallShareReady = sharesHeld >= coveredCallShareNeed;
   const expiryChoices = availableExpiries(currentDay);
   const [expiresDay, setExpiresDay] = useState<OptionExpiryDay>(expiryChoices.at(-1) ?? 'FRI');
   const safeExpiry = expiryChoices.includes(expiresDay) ? expiresDay : expiryChoices.at(-1) ?? 'FRI';
@@ -214,6 +219,22 @@ export function TradeTicket({ symbol, currentPrice, currentDay, volatility, run,
             <span>DTE <b>{remaining}d</b></span>
           </>
         ) : null}
+        {strategy === 'COVERED_CALL' ? (
+          <>
+            <span title="Premium collected per contract × 100 shares.">
+              Credit <b className="gain">+${(callPremium * contractQuantity * 100).toFixed(2)}</b>
+            </span>
+            <span title="Strike at which your shares would be called away if the option finishes ITM.">
+              Strike <b>${longCallStrike}</b>
+            </span>
+            <span title="Shares required as collateral. Each contract covers 100 shares.">
+              Collateral <b className={coveredCallShareReady ? 'gain' : 'loss'}>
+                {sharesHeld}/{coveredCallShareNeed} sh
+              </b>
+            </span>
+            <span>DTE <b>{remaining}d</b></span>
+          </>
+        ) : null}
       </div>
 
       <div className="trade-grid">
@@ -233,6 +254,26 @@ export function TradeTicket({ symbol, currentPrice, currentDay, volatility, run,
         ) : null}
         {strategy === 'STRADDLE' ? (
           <button type="button" className="strategy-button" onClick={openStraddle}>Open Straddle ${straddleStrike}</button>
+        ) : null}
+        {strategy === 'COVERED_CALL' ? (
+          <button
+            type="button"
+            className="strategy-button"
+            disabled={!coveredCallsUnlocked || !coveredCallShareReady}
+            title={coveredCallsUnlocked ? (coveredCallShareReady ? '' : `Need ${coveredCallShareNeed} shares first.`) : 'Covered Calls unlock at Stock Broker.'}
+            onClick={() => dispatch({
+              type: 'OPEN_COVERED_CALL',
+              symbol,
+              strike: longCallStrike,
+              quantity: contractQuantity,
+              premium: callPremium,
+              expiresDay: safeExpiry
+            })}
+          >
+            {!coveredCallsUnlocked ? 'Covered Call · Stock Broker'
+              : !coveredCallShareReady ? `Need ${coveredCallShareNeed} shares`
+              : `Write Covered Call $${longCallStrike}`}
+          </button>
         ) : null}
         <button type="button" onClick={() => dispatch({ type: 'CLOSE_OPTIONS', symbol, currentPrice, volatility })}>Close Options</button>
       </div>

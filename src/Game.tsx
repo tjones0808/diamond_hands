@@ -15,9 +15,11 @@ import { setSfxMuted, setSfxVolume } from './audio/audioEngine';
 import { setAmbientMuted, setAmbientTier, setAmbientVolume, stopAmbient } from './audio/ambient';
 import { RunJournal } from './ui/RunJournal';
 import { InsiderTipModal, SecInvestigationModal } from './ui/InsiderTipModal';
+import { LpReviewModal } from './ui/LpReviewModal';
 import { PauseMenu } from './ui/PauseMenu';
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts';
 import { ShortcutHelp } from './ui/ShortcutHelp';
+import { ToastStack } from './ui/ToastStack';
 import type { SaveState } from './game/types';
 
 export interface GameProps {
@@ -86,6 +88,7 @@ export function Game({ seed, initialSave, onQuitToTitle }: GameProps) {
       </section>
       <InsiderTipModal run={state.run} dispatch={dispatch} />
       <SecInvestigationModal run={state.run} dispatch={dispatch} />
+      <LpReviewModal run={state.run} dispatch={dispatch} />
       <WeekRecap run={state.run} dispatch={dispatch} />
       <PostRunSummary run={state.run} onRestart={onQuitToTitle} />
       <Coachmark run={state.run} save={state.save} onComplete={() => dispatch({ type: 'COMPLETE_TUTORIAL' })} />
@@ -98,6 +101,7 @@ export function Game({ seed, initialSave, onQuitToTitle }: GameProps) {
         />
       ) : null}
       <ShortcutHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <ToastStack />
     </main>
   );
 }

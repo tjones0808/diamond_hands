@@ -31,7 +31,8 @@ const baseRun: RunState = {
   clients: [],
   dayStartNetWorth: 6500,
   dailyLossStrikes: 0,
-  rivals: []
+  rivals: [],
+  lpNetWorthHistory: []
 };
 
 describe('boss week eligibility', () => {

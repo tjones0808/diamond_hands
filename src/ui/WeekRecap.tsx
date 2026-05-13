@@ -154,6 +154,7 @@ function strategyLabel(type: OptionStrategyType) {
     case 'CALL_SPREAD': return 'CALL SPREAD';
     case 'PUT_SPREAD': return 'PUT SPREAD';
     case 'STRADDLE': return 'STRADDLE';
+    case 'COVERED_CALL': return 'COVERED CALL';
   }
 }
 

@@ -11,7 +11,7 @@ const minimalRun = (overrides: Partial<RunState> = {}): RunState => ({
   fundamentalScore: 0, technicalScore: 0, weekFundamentalScore: 0, weekTechnicalScore: 0,
   stress: 0, confidence: 0, marginUsed: 0, tickerSeries: {},
   weekStartNetWorth: 5000, weekStartCash: 5000, restingOrders: [], clients: [],
-  dayStartNetWorth: 5000, dailyLossStrikes: 0, rivals: [],
+  dayStartNetWorth: 5000, dailyLossStrikes: 0, rivals: [], lpNetWorthHistory: [],
   ...overrides
 });
 

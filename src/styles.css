@@ -132,6 +132,176 @@ button:focus-visible {
   border-color: var(--cyan);
 }
 
+.toast-stack {
+  position: fixed;
+  z-index: 30;
+  top: 84px;
+  right: 16px;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 320px;
+}
+
+.toast {
+  pointer-events: auto;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 6px;
+  background: rgba(2, 18, 30, 0.96);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42);
+  color: var(--text);
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  padding: 9px 12px;
+  animation: toast-slide 220ms ease-out;
+}
+
+.toast small {
+  color: #8abeb5;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toast-success {
+  border-color: rgba(110, 231, 183, 0.55);
+  background: linear-gradient(135deg, rgba(2, 48, 32, 0.95), rgba(2, 18, 12, 0.95));
+}
+
+.toast-warn {
+  border-color: rgba(250, 204, 21, 0.55);
+  background: linear-gradient(135deg, rgba(40, 28, 4, 0.96), rgba(2, 18, 12, 0.95));
+}
+
+.toast-danger {
+  border-color: rgba(248, 113, 133, 0.6);
+  background: linear-gradient(135deg, rgba(76, 5, 25, 0.95), rgba(2, 18, 12, 0.95));
+}
+
+@keyframes toast-slide {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.lp-backdrop {
+  position: fixed;
+  z-index: 24;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 5, 0.88);
+  backdrop-filter: blur(3px);
+}
+
+.lp-panel {
+  width: min(540px, calc(100vw - 32px));
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(2, 18, 30, 0.97), rgba(2, 7, 6, 0.97));
+  box-shadow: 0 0 56px rgba(56, 189, 248, 0.22);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  font-family: Consolas, "Liberation Mono", monospace;
+}
+
+.lp-panel.lp-passed {
+  border-color: rgba(110, 231, 183, 0.6);
+  box-shadow: 0 0 56px rgba(110, 231, 183, 0.22);
+}
+
+.lp-panel.lp-failed {
+  border-color: rgba(248, 113, 133, 0.55);
+  box-shadow: 0 0 56px rgba(248, 113, 133, 0.22);
+}
+
+.lp-panel header span {
+  display: block;
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.lp-panel header h2 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.lp-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.lp-metrics span {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 8px 10px;
+}
+
+.lp-metrics small {
+  color: #8abeb5;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lp-metrics b {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.lp-body {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lp-effects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.lp-effects li {
+  border-left: 3px solid var(--cyan);
+  background: rgba(2, 6, 5, 0.5);
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.lp-effects li.gain { border-color: var(--green); }
+.lp-effects li.loss { border-color: var(--red); }
+
+.lp-ack {
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #02110b;
+  padding: 12px;
+  font-family: Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lp-ack:hover { filter: brightness(1.08); }
+
 .tip-backdrop {
   position: fixed;
   z-index: 13; /* above terminal but below recap (z-index 11) — wait, must be above recap so tip is interactive */

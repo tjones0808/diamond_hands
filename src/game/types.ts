@@ -57,7 +57,7 @@ export interface MarketTicker {
 
 export type OptionSide = 'LONG' | 'SHORT';
 export type OptionExpiryDay = 'TUE' | 'THU' | 'FRI';
-export type OptionStrategyType = 'SINGLE_CALL' | 'SINGLE_PUT' | 'CALL_SPREAD' | 'PUT_SPREAD' | 'STRADDLE';
+export type OptionStrategyType = 'SINGLE_CALL' | 'SINGLE_PUT' | 'CALL_SPREAD' | 'PUT_SPREAD' | 'STRADDLE' | 'COVERED_CALL';
 
 export interface OptionContract {
   id: string;
@@ -188,6 +188,10 @@ export interface RunState {
   dailyLossStrikes: number;
   /** Rivals on the leaderboard (per-run). */
   rivals: Rival[];
+  /** Weekly net-worth snapshots for the quarterly LP review (Fund Manager+). */
+  lpNetWorthHistory: number[];
+  /** Pending LP review modal — Monday of week %4. */
+  pendingLpReview?: LpReviewState;
   /** Pending tip offered to the player (modal). */
   pendingInsiderTip?: InsiderTip;
   /** Accepted tip for the current week. Wednesday's shock will be forced to match. */
@@ -221,6 +225,22 @@ export interface InsiderTip {
 export interface SecInvestigation {
   fineAmount: number;
   reputationHit: number;
+}
+
+export interface LpReviewState {
+  /** Net-worth performance over the trailing 4 weeks (decimal, e.g. 0.05 = +5%). */
+  trailingPerformancePct: number;
+  /** Benchmark target the LP expects you to clear. */
+  benchmarkPct: number;
+  passed: boolean;
+  /** Reward or penalty applied to client balances on acknowledgement. */
+  clientBalanceMultiplier: number;
+  /** Reputation delta on acknowledgement. */
+  reputationDelta: number;
+  /** Headline copy. */
+  headline: string;
+  /** Detail copy explaining outcome. */
+  body: string;
 }
 
 export type RiskTolerance = 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE';

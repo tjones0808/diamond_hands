@@ -68,7 +68,8 @@ export function createInitialGameState(seed = Date.now(), save = createInitialSa
       clients: [],
       dayStartNetWorth: 5000 + perk.bonusCash,
       dailyLossStrikes: 0,
-      rivals: generateRivals(createRng(seed + 313))
+      rivals: generateRivals(createRng(seed + 313)),
+      lpNetWorthHistory: [5000 + perk.bonusCash]
     }
   };
 

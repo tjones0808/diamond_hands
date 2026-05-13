@@ -36,6 +36,10 @@
 - **Achievements**: 20 skill-based badges unlocking across runs (first green Friday, big-week milestone, premium collector, boss slayer, first promotion, broker/fund-manager/HFF tier reaches, balanced trader, iron stomach, comeback kid, long haul, three strikes, clean conscience, dirty money, got caught, wiped out, spread pro, volatility trader, wealth manager).
 - **Pause Menu**: Esc opens an overlay with Resume, Hall of Fame, Achievements, Settings access, and "Quit to title." Doesn't affect game state — pure UX cover.
 - **Keyboard Shortcuts**: 1–8 select tickers; Space advances the day; B/S/C for buy/sell/close; M for mute; J for journal; Esc for pause; ? for the cheatsheet overlay. Disabled while typing in inputs.
+- **Covered Calls**: new option strategy unlocked at Stock Broker. Requires owning 100 shares per contract as collateral. Premium credits to cash on open. If ITM at expiry the shares are called away at the strike (cash settled). 4 new unit tests cover collateral check + assigned/expired-worthless paths.
+- **LP Quarterly Reviews**: every 4 weeks at Fund Manager+ a Monday review modal fires. Computes trailing 4-week net-worth return vs benchmark (2% at Fund Manager, 4% at HFF). Beat → existing client balances grow + reputation bump. Trail → client balances pulled + reputation hit. Snapshots tracked in `lpNetWorthHistory`.
+- **Toast Notifications**: in-game transient toast stack for stop-loss fills, limit fills, client redemptions, promotions, boss-week reveals, SEC notices, balanced-trader bonus, and bankruptcy. Auto-dismiss after 4s, click to dismiss earlier. Tone variants (info / success / warn / danger).
+- **Bundle Splitting**: Phaser dynamic-imported inside `RoomCanvas`; Vite `manualChunks` for `phaser`, `react-vendor`, and the app. Initial JS bundle dropped from 1.8MB → ~325KB (gzip ~102KB). Phaser loads async after the rest of the app is interactive.
 
 ## Backlog
 

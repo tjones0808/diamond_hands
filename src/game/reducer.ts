@@ -6,6 +6,7 @@ import {
   buyPut,
   buyShares,
   closeOptionsForSymbol,
+  openCoveredCall,
   openMultiLegOptions,
   sellShares,
   settleExpiringOptions
@@ -30,6 +31,8 @@ import { attachClientsOnPromotion, settleClientsForWeek } from '../career/client
 import { captureDayStartNetWorth, checkDailyLossLimit } from '../career/dailyLossLimit';
 import { tickRivalsForWeek } from '../career/rivals';
 import { maybeOfferTip, rollSecInvestigation } from '../career/insiderTips';
+import { buildLpReview, shouldFireLpReview } from '../career/lpReview';
+import { pushToast } from '../ui/toasts';
 
 export function checkBossWeekStart(run: RunState): RunState {
   if (run.bossWeek) return run;
@@ -52,6 +55,7 @@ export type GameAction =
   | { type: 'BUY_CALL'; symbol: string; strike: number; quantity: number; premium: number; expiresDay?: OptionExpiryDay }
   | { type: 'BUY_PUT'; symbol: string; strike: number; quantity: number; premium: number; expiresDay?: OptionExpiryDay }
   | { type: 'OPEN_STRATEGY'; input: OpenMultiLegInput }
+  | { type: 'OPEN_COVERED_CALL'; symbol: string; strike: number; quantity: number; premium: number; expiresDay?: OptionExpiryDay }
   | { type: 'CLOSE_OPTIONS'; symbol: string; currentPrice: number; volatility: number }
   | { type: 'CREATE_RESTING_ORDER'; orderType: RestingOrderType; symbol: string; quantity: number; triggerPrice: number }
   | { type: 'CANCEL_RESTING_ORDER'; orderId: string }
@@ -65,7 +69,8 @@ export type GameAction =
   | { type: 'RESET_TUTORIAL' }
   | { type: 'ACCEPT_INSIDER_TIP' }
   | { type: 'DECLINE_INSIDER_TIP' }
-  | { type: 'DISMISS_SEC_INVESTIGATION' };
+  | { type: 'DISMISS_SEC_INVESTIGATION' }
+  | { type: 'ACKNOWLEDGE_LP_REVIEW' };
 
 const expiryDays: OptionExpiryDay[] = ['TUE', 'THU', 'FRI'];
 
@@ -95,6 +100,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       playSfx('buy');
       const run = openMultiLegOptions(state.run, action.input);
       return { ...state, run: checkBankruptcy(tagTechnicalTrade(run, state.run, action.input.expiresDay)) };
+    }
+    case 'OPEN_COVERED_CALL': {
+      playSfx('sell');
+      const expiry = action.expiresDay ?? 'FRI';
+      const run = openCoveredCall(state.run, action.symbol, action.strike, action.quantity, action.premium, expiry);
+      // Premium collected counts as fundamental income, not technical churn.
+      return { ...state, run: checkBankruptcy(tagFundamentalTrade(run, state.run)) };
     }
     case 'CLOSE_OPTIONS':
       playSfx('sell');
@@ -148,6 +160,29 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'DISMISS_SEC_INVESTIGATION':
       if (!state.run.secInvestigation) return state;
       return { ...state, run: { ...state.run, secInvestigation: undefined } };
+    case 'ACKNOWLEDGE_LP_REVIEW': {
+      const review = state.run.pendingLpReview;
+      if (!review) return state;
+      const updatedClients = state.run.clients.map((c) => ({
+        ...c,
+        balance: Math.max(0, Math.round(c.balance * (1 + review.clientBalanceMultiplier) * 100) / 100)
+      }));
+      return {
+        ...state,
+        run: {
+          ...state.run,
+          clients: updatedClients,
+          reputation: Math.max(0, Math.min(100, state.run.reputation + review.reputationDelta)),
+          pendingLpReview: undefined,
+          weekLog: [
+            ...state.run.weekLog,
+            review.passed
+              ? `LP review passed. Clients added ${(review.clientBalanceMultiplier * 100).toFixed(0)}% to balances.`
+              : `LP review failed. Clients pulled ${(Math.abs(review.clientBalanceMultiplier) * 100).toFixed(0)}% from balances.`
+          ]
+        }
+      };
+    }
     case 'UNLOCK_SECOND_MONITOR':
       if (state.save.unlocks.secondMonitor || state.run.cash < 750) return state;
       return {
@@ -365,6 +400,7 @@ function advanceRunDay(state: GameState): GameState {
 
   // Snapshot Monday-open baselines and clear any resting orders left over from last week.
   const newMondayNw = getNetWorth(withNewMarket);
+  const trimmedHistory = [...withNewMarket.lpNetWorthHistory, newMondayNw].slice(-12); // keep last 12 weeks max
   let newWeekRun: typeof withNewMarket = {
     ...withNewMarket,
     weekStartCash: withNewMarket.cash,
@@ -372,8 +408,15 @@ function advanceRunDay(state: GameState): GameState {
     dayStartNetWorth: newMondayNw,
     restingOrders: [],
     activeInsiderTip: undefined,
-    pendingInsiderTip: undefined
+    pendingInsiderTip: undefined,
+    lpNetWorthHistory: trimmedHistory
   };
+
+  // Fire LP quarterly review on eligible Mondays.
+  if (shouldFireLpReview(newWeekRun)) {
+    const review = buildLpReview(newWeekRun);
+    if (review) newWeekRun = { ...newWeekRun, pendingLpReview: review };
+  }
   // Tip is offered post-recap via DISMISS_RECAP so it doesn't stack on top of the modal.
 
   // Promotion to a tier with clients triggers a new roster generation.
@@ -404,8 +447,29 @@ function advanceRunDay(state: GameState): GameState {
     weekFundamentalScore: 0,
     weekTechnicalScore: 0
   });
-  if (nextRun.isBankrupt && !state.run.isBankrupt) playSfx('bankruptcy');
-  if (nextRun.bossWeek) playSfx('bossReveal');
+  if (nextRun.isBankrupt && !state.run.isBankrupt) {
+    playSfx('bankruptcy');
+    pushToast('Bankruptcy: the run ends here.', 'danger', 6000);
+  }
+  if (nextRun.bossWeek) {
+    playSfx('bossReveal');
+    pushToast(`Boss week incoming: ${nextRun.bossWeek.definition.title}`, 'warn', 5000);
+  }
+  if (promotion.promoted) {
+    pushToast(`Promoted to ${promotion.tier.replaceAll('_', ' ')}!`, 'success', 6000);
+  }
+  if (balancedTrader) {
+    pushToast('Balanced Trader bonus: +2 reputation.', 'success');
+  }
+  if (clientResult.departed.length > 0) {
+    pushToast(`${clientResult.departed.length} client${clientResult.departed.length === 1 ? '' : 's'} redeemed.`, 'warn');
+  }
+  if (secInvestigation) {
+    pushToast('SEC investigation opened. Check the notice.', 'danger', 6000);
+  }
+  if (nextRun.pendingLpReview) {
+    pushToast('LP quarterly review on the calendar.', 'info');
+  }
 
   let nextStats = applyWeekResultToStats(state.save.stats, weekResult);
   let nextSave = {

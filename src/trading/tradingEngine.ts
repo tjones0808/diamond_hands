@@ -122,6 +122,35 @@ export function buyPut(
   });
 }
 
+/**
+ * Opens a covered call: requires owning `quantity * CONTRACT_SIZE` shares of `symbol`.
+ * Sells a single SHORT CALL leg; premium credited to cash immediately. The shares are
+ * the collateral — at expiry if the call is ITM, the shares are "called away" (sold at
+ * strike automatically).
+ */
+export function openCoveredCall(
+  run: RunState,
+  symbol: string,
+  strike: number,
+  quantity: number,
+  premium: number,
+  expiresDay: OptionExpiryDay = 'FRI'
+): RunState {
+  const required = quantity * CONTRACT_SIZE;
+  const position = run.sharePositions.find((p) => p.symbol === symbol);
+  if (!position || position.quantity < required) {
+    return addLog(
+      run,
+      `Need at least ${required} ${symbol} shares as collateral to write ${quantity} covered call(s).`
+    );
+  }
+  return openMultiLegOptions(run, {
+    strategyType: 'COVERED_CALL',
+    expiresDay,
+    legs: [{ symbol, type: 'CALL', side: 'SHORT', strike, premium, quantity }]
+  });
+}
+
 export function openMultiLegOptions(run: RunState, input: OpenMultiLegInput): RunState {
   if (input.legs.length === 0) return addLog(run, 'No legs to open.');
 
@@ -196,6 +225,7 @@ export function settleExpiringOptions(
   if (expiring.length === 0) return run;
 
   let cash = run.cash;
+  let sharePositions = run.sharePositions;
   const logs = [...run.weekLog];
   const newResults: OptionResult[] = [];
 
@@ -211,6 +241,52 @@ export function settleExpiringOptions(
       settlementValue = intrinsicValue;
       cash = roundMoney(cash + settlementValue);
       pnl = roundMoney(settlementValue - premiumPaid);
+    } else if (option.strategyType === 'COVERED_CALL' && intrinsicValue > 0) {
+      // Covered call ITM at expiry — shares get called away at the strike, NOT at market.
+      // The "short call" liability is effectively the difference between market and strike,
+      // but because the shares deliver at strike, the player nets: strike * sharesDelivered + premium.
+      const sharesDelivered = option.quantity * CONTRACT_SIZE;
+      const existing = sharePositions.find((p) => p.symbol === option.symbol);
+      if (existing && existing.quantity >= sharesDelivered) {
+        const proceedsAtStrike = roundMoney(option.strike * sharesDelivered);
+        const remainingQty = existing.quantity - sharesDelivered;
+        sharePositions = remainingQty > 0
+          ? sharePositions.map((p) => p.symbol === option.symbol ? { ...p, quantity: remainingQty } : p)
+          : sharePositions.filter((p) => p.symbol !== option.symbol);
+        cash = roundMoney(cash + proceedsAtStrike);
+        // For accounting in the recap: settlementValue is the share proceeds; pnl = premium received +
+        // (strike - average cost) per share. We'll use the simpler view: net cash flow is the
+        // proceeds. The recap row will read "Called away ${sharesDelivered} shares at $strike."
+        settlementValue = proceedsAtStrike - (existing.averagePrice * sharesDelivered);
+        pnl = roundMoney(settlementValue + premiumPaid);
+        logs.push(
+          `${option.symbol} covered call assigned: ${sharesDelivered} shares called away at $${option.strike}. Premium kept: $${premiumPaid.toFixed(2)}.`
+        );
+      } else {
+        // Should not happen if openCoveredCall enforced the collateral check, but fall back to
+        // standard naked-short settlement.
+        settlementValue = -intrinsicValue;
+        cash = roundMoney(cash + settlementValue);
+        pnl = roundMoney(premiumPaid + settlementValue);
+        logs.push(
+          `${option.symbol} short CALL ${option.strike} (${option.expiresDay}) settled in the money: ${signed(pnl)}.`
+        );
+      }
+      newResults.push({
+        symbol: option.symbol,
+        type: option.type,
+        side: option.side,
+        strike: option.strike,
+        quantity: option.quantity,
+        premiumPaid,
+        settlementValue: roundMoney(settlementValue),
+        pnl,
+        expiredInTheMoney: true,
+        expiresDay: option.expiresDay,
+        strategyId: option.strategyId,
+        strategyType: option.strategyType
+      });
+      continue;
     } else {
       settlementValue = -intrinsicValue;
       cash = roundMoney(cash + settlementValue);
@@ -242,6 +318,7 @@ export function settleExpiringOptions(
   return {
     ...run,
     cash,
+    sharePositions,
     optionPositions: run.optionPositions.filter((option) => option.expiresDay !== day),
     weekLog: logs,
     weekOptionResults: [...run.weekOptionResults, ...newResults]
@@ -268,6 +345,7 @@ function strategyLabel(type: OptionStrategyType): string {
     case 'CALL_SPREAD': return 'CALL SPREAD';
     case 'PUT_SPREAD': return 'PUT SPREAD';
     case 'STRADDLE': return 'STRADDLE';
+    case 'COVERED_CALL': return 'COVERED CALL';
   }
 }
 

@@ -5,6 +5,7 @@ import {
   buyPut,
   buyShares,
   closeOptionsForSymbol,
+  openCoveredCall,
   openMultiLegOptions,
   sellShares,
   settleExpiringOptions,
@@ -40,7 +41,8 @@ const baseRun: RunState = {
   clients: [],
   dayStartNetWorth: 5000,
   dailyLossStrikes: 0,
-  rivals: []
+  rivals: [],
+  lpNetWorthHistory: []
 };
 
 describe('tradingEngine', () => {
@@ -135,6 +137,43 @@ describe('tradingEngine', () => {
     expect(settled.optionPositions[0].symbol).toBe('FIZZ');
     expect(settled.weekOptionResults).toHaveLength(1);
     expect(settled.weekOptionResults[0].expiresDay).toBe('TUE');
+  });
+
+  it('rejects opening a covered call without enough underlying shares', () => {
+    const noShares = openCoveredCall(baseRun, 'NVRA', 55, 1, 3);
+    expect(noShares.optionPositions).toHaveLength(0);
+    expect(noShares.weekLog.at(-1)).toMatch(/shares as collateral/);
+  });
+
+  it('opens a covered call and credits the premium to cash', () => {
+    const withShares = buyShares(baseRun, 'NVRA', 100, 50); // 100 shares at $50 = $5000
+    expect(withShares.cash).toBe(0);
+    const withCall = openCoveredCall(withShares, 'NVRA', 55, 1, 3); // sell 1 call $55 @ $3
+    // SHORT leg credit: 3 * 1 * 100 = $300 → cash goes from 0 to +$300 (netDebit negative)
+    expect(withCall.cash).toBe(300);
+    expect(withCall.optionPositions).toHaveLength(1);
+    expect(withCall.optionPositions[0].strategyType).toBe('COVERED_CALL');
+  });
+
+  it('called away: ITM covered call sells the shares at strike and keeps the premium', () => {
+    const withShares = buyShares(baseRun, 'NVRA', 100, 50); // 100 shares, cash 0
+    const withCall = openCoveredCall(withShares, 'NVRA', 55, 1, 3); // sell call $55 @ $3, cash 300
+    // Underlying closes at $62 — call is ITM, shares get called away at $55
+    const settled = settleOptions(withCall, { NVRA: 62 });
+    expect(settled.sharePositions).toHaveLength(0);
+    // Cash: 300 (premium) + 5500 (100 shares × $55) = 5800
+    expect(settled.cash).toBe(5800);
+    expect(settled.weekLog.some((line) => line.includes('called away'))).toBe(true);
+  });
+
+  it('keeps the premium and the shares when the covered call expires worthless', () => {
+    const withShares = buyShares(baseRun, 'NVRA', 100, 50);
+    const withCall = openCoveredCall(withShares, 'NVRA', 55, 1, 3);
+    // Underlying closes at $52 — call is OTM, expires worthless
+    const settled = settleOptions(withCall, { NVRA: 52 });
+    expect(settled.sharePositions).toHaveLength(1);
+    expect(settled.sharePositions[0].quantity).toBe(100);
+    expect(settled.cash).toBe(300); // still hold the premium credit
   });
 
   it('settles a straddle profitably on a large move in either direction', () => {

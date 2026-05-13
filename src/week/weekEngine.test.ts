@@ -31,7 +31,8 @@ const run: RunState = {
   clients: [],
   dayStartNetWorth: 5000,
   dailyLossStrikes: 0,
-  rivals: []
+  rivals: [],
+  lpNetWorthHistory: []
 };
 
 describe('advanceDay', () => {

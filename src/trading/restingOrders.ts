@@ -1,4 +1,5 @@
 import type { PricePoint, RestingOrder, RestingOrderType, RunState, WeekDay } from '../game/types';
+import { pushToast } from '../ui/toasts';
 
 /**
  * Sweeps all resting orders against the day's high/low. Triggered orders execute at the
@@ -35,9 +36,9 @@ export function sweepRestingOrders(run: RunState, day: WeekDay): RunState {
 
     sharePositions = executed.sharePositions;
     cash = executed.cash;
-    logs.push(
-      `${humanLabel(order.type)} triggered: ${order.quantity} ${order.symbol} @ $${fillPrice.toFixed(2)}.`
-    );
+    const fillLog = `${humanLabel(order.type)} triggered: ${order.quantity} ${order.symbol} @ $${fillPrice.toFixed(2)}.`;
+    logs.push(fillLog);
+    pushToast(fillLog, order.type === 'STOP_LOSS' ? 'warn' : 'success');
   }
 
   return { ...run, restingOrders: remaining, cash, sharePositions, weekLog: logs };

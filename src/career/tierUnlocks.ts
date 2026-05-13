@@ -22,6 +22,11 @@ export function canUseStopLosses(tier: CareerTier): boolean {
   return tierAtLeast(tier, 'FUND_MANAGER');
 }
 
+/** Covered calls unlock at Stock Broker (need clients + understanding of collateralised options). */
+export function canUseCoveredCalls(tier: CareerTier): boolean {
+  return tierAtLeast(tier, 'STOCK_BROKER');
+}
+
 /** Per-share commission. Stock brokers and above pay a small commission per share trade. */
 export function getShareCommissionPerShare(tier: CareerTier): number {
   if (tierAtLeast(tier, 'STOCK_BROKER')) return 0.005;

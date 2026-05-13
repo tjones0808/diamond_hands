@@ -76,7 +76,8 @@ const baseRun: RunState = {
   clients: [],
   dayStartNetWorth: 5000,
   dailyLossStrikes: 0,
-  rivals: []
+  rivals: [],
+  lpNetWorthHistory: []
 };
 
 describe('isTriggered', () => {
